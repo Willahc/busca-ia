@@ -4,6 +4,7 @@ import {
   MissingEventId,
   OfficialStatus,
   PersonId,
+  PrivacyLevel,
   WorkflowStatus,
 } from "@/domain";
 import { CaseRepository } from "../ports/case-repository";
@@ -19,6 +20,7 @@ export interface CreateCaseInput {
   readonly missingEventId: MissingEventId;
   readonly workflowStatus?: WorkflowStatus;
   readonly officialStatus?: OfficialStatus;
+  readonly privacyLevel?: PrivacyLevel;
   readonly createdAt?: Date;
 }
 
@@ -57,6 +59,7 @@ export class CreateCase {
       missingEventId: input.missingEventId,
       workflowStatus: input.workflowStatus,
       officialStatus: input.officialStatus,
+      privacyLevel: input.privacyLevel,
       createdAt: input.createdAt,
     });
 

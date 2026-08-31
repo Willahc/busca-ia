@@ -34,6 +34,7 @@ describe("SQLite Migrations and Schema", () => {
     expect(tableNames).toContain("hypotheses");
     expect(tableNames).toContain("hypothesis_supporting_evidence");
     expect(tableNames).toContain("hypothesis_contradicting_evidence");
+    expect(tableNames).toContain("audit_events");
   });
 
   it("2. should be idempotent (applying migrations multiple times causes no errors)", () => {
@@ -43,7 +44,7 @@ describe("SQLite Migrations and Schema", () => {
     }).not.toThrow();
 
     const count = db.prepare("SELECT count(*) as count FROM schema_migrations").get() as { count: number };
-    expect(count.count).toBe(1);
+    expect(count.count).toBe(3);
   });
 
   it("3. should register applied migrations in schema_migrations table", () => {

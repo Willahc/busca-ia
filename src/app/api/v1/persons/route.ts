@@ -1,25 +1,30 @@
 import { NextRequest } from "next/server";
 import { createPersonId } from "@/domain";
-import { getApplicationContainer } from "@/infrastructure";
+import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES, PERMISSIONS } from "@/security";
 import {
-  handleHttpError,
+  executeProtectedCommand,
   jsonSuccess,
   registerPersonSchema,
   toPersonDto,
 } from "@/app/api/_shared";
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validated = registerPersonSchema.parse(body);
+  return executeProtectedCommand(
+    request,
+    {
+      permission: PERMISSIONS.PERSON_CREATE,
+      action: AUDIT_ACTIONS.PERSON_CREATE,
+      resourceType: AUDIT_RESOURCE_TYPES.PERSON,
+    },
+    async ({ container }) => {
+      const body = await request.json();
+      const validated = registerPersonSchema.parse(body);
 
-    const container = getApplicationContainer();
-    const person = await container.useCases.registerPerson.execute({
-      id: createPersonId(validated.personId),
-    });
+      const person = await container.useCases.registerPerson.execute({
+        id: createPersonId(validated.personId),
+      });
 
-    return jsonSuccess(toPersonDto(person), 201);
-  } catch (error) {
-    return handleHttpError(error);
-  }
+      return jsonSuccess(toPersonDto(person), 201);
+    }
+  );
 }

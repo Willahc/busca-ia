@@ -10,9 +10,22 @@ import {
   EntityNotFoundError,
   InvalidOperationError,
 } from "@/application";
+import {
+  AuthorizationDeniedError,
+  UnauthenticatedError,
+} from "@/security";
 import { ApiErrorDetail, ApiErrorEnvelope, jsonError } from "./http-response";
 
 export function handleHttpError(error: unknown): NextResponse<ApiErrorEnvelope> {
+  if (error instanceof UnauthenticatedError) {
+    return jsonError("UNAUTHENTICATED", "Authentication required", 401);
+  }
+
+  if (error instanceof AuthorizationDeniedError) {
+    // Sanitized: never leak internal privacy/sealed states to unauthorized clients
+    return jsonError("FORBIDDEN", "Access denied", 403);
+  }
+
   if (error instanceof ZodError) {
     const details: ApiErrorDetail[] = error.issues.map((issue) => ({
       field: issue.path.join("."),

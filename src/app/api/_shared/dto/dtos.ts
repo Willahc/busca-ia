@@ -59,6 +59,7 @@ export interface CaseDto {
   readonly missingEventId: string;
   readonly workflowStatus: string;
   readonly officialStatus: string;
+  readonly privacyLevel: string;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -70,6 +71,7 @@ export function toCaseDto(c: Case): CaseDto {
     missingEventId: c.missingEventId,
     workflowStatus: c.workflowStatus,
     officialStatus: c.officialStatus,
+    privacyLevel: c.privacyLevel,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   };

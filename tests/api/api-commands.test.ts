@@ -15,7 +15,11 @@ import { createAppContainer, resetApplicationContainer } from "@/infrastructure"
 function createJsonRequest(url: string, method: string, body?: unknown): NextRequest {
   return new NextRequest(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-actor-id": "ACTOR-TEST-001",
+      "x-actor-roles": "LAW_ENFORCEMENT,CASE_MANAGER",
+    },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
