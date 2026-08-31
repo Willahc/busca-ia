@@ -1,7 +1,7 @@
 # Arquitetura do Sistema
 
 > **Documento:** `docs/ARCHITECTURE.md`  
-> **Versão:** 1.2.0 (Gate 3 — Camada de Aplicação e Ciclo de Vida do Caso)
+> **Versão:** 1.3.0 (Gate 4 — Persistência SQLite Local e Inversão de Dependência)
 
 ---
 
@@ -34,7 +34,15 @@ O sistema adota uma arquitetura em camadas estritamente desacoplada (Clean Archi
 +---------------+       +--------------------+       +--------------------+
 | Intelligence  |       |   Infrastructure   |       |      Security      |
 | (src/intel..) |       | (src/infrastruct.) |       |   (src/security)   |
+|               |       | - SQLite Repos     |       |                    |
+|               |       | - Mappers          |       |                    |
+|               |       | - Migrations       |       |                    |
 +---------------+       +--------------------+       +--------------------+
+                                  |
+                                  v
+                        +--------------------+
+                        |  data/busca-ia.db  |
+                        +--------------------+
 ```
 
 ### 1.1. Presentation (`src/app/`, `src/components/`)
@@ -61,7 +69,9 @@ Implementa motores de análise especializados via adaptadores desacoplados:
 - `nlp/`: Extração de entidades estruturadas a partir de relatos livres (preservando o texto bruto).
 
 ### 1.5. Infrastructure (`src/infrastructure/`) — Persistência e Integrações
-- Futuramente implementará as interfaces de portas (`*Repository`), persistência de dados, armazenamento e integrações externas.
+- Implementa as interfaces de portas (`*Repository`) definidas na camada de aplicação.
+- Contém conexões de banco de dados (`better-sqlite3`), mappers bi-direcionais, migrations SQL versionadas e controle transacional atômico.
+- Para detalhes, consulte [`docs/PERSISTENCE.md`](PERSISTENCE.md).
 
 ### 1.6. Security (`src/security/`) — Autorização e Auditoria
 - Aplica políticas de RBAC (Role-Based Access Control) e ABAC (Attribute-Based Access Control).

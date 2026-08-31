@@ -170,3 +170,67 @@
 - **Contexto:** Permitir que controllers ou componentes UI instanciem entidades ou chamem métodos de domínio diretamente viola a separação de camadas e contorna validações de caso de uso.
 - **Decisão:** A camada de apresentação deve exclusivamente chamar Use Cases da Application Layer, recebendo DTOs ou entidades imutáveis como retorno.
 - **Consequências:** Blindagem das regras de orquestração e eliminação de mutações acidentais na interface.
+
+---
+
+### ADR-022: SQLite como Persistência Local Inicial
+- **Status:** Aceito
+- **Contexto:** O MVP local precisa persistir dados entre execuções sem depender de daemons de banco externos, Docker ou configurações complexas.
+- **Decisão:** Adotar SQLite local via biblioteca `better-sqlite3` para a persistência em desenvolvimento e testes locais.
+- **Consequências:** Persistência rápida, confiável, com suporte a transações ACID e foreign keys, com zero atrito de setup.
+
+---
+
+### ADR-023: Infrastructure Implementa Repository Ports da Application
+- **Status:** Aceito
+- **Contexto:** Para manter o desacoplamento arquitetural, a camada de persistência deve se comportar como um adaptador de saída.
+- **Decisão:** Implementar todas as interfaces de `src/application/ports/` dentro de `src/infrastructure/persistence/sqlite/repositories/`.
+- **Consequências:** Inversão de dependência preservada; o sistema pode alternar de SQLite para PostgreSQL sem alterar Domain ou Application.
+
+---
+
+### ADR-024: Domain e Application Permanecem Agnósticos à Persistência
+- **Status:** Aceito
+- **Contexto:** O vazamento de detalhes de SQL, SQLite ou drivers nas camadas superiores compromete a pureza das regras e testes.
+- **Decisão:** `src/domain/` e `src/application/` são estritamente proibidos de importar qualquer módulo de persistência, drivers SQLite ou SQL.
+- **Consequências:** Testes unitários do domínio continuam ultrarrápidos e independentes de I/O de disco.
+
+---
+
+### ADR-025: Mappers Separam Modelos de Storage de Entidades de Domínio
+- **Status:** Aceito
+- **Contexto:** O formato em que os dados são gravados no banco relacional difere do formato de objetos ricos e imutáveis do Domínio.
+- **Decisão:** Criar mappers bi-direcionais dedicados (`SourceMapper`, `FactMapper`, etc.) que convertem entre linhas de banco (`Row`) e instâncias de domínio (`Entity`).
+- **Consequências:** Isolamento entre detalhes relacionais e semântica de entidades de domínio.
+
+---
+
+### ADR-026: Migrations Versionadas e Idempotentes
+- **Status:** Aceito
+- **Contexto:** O esquema do banco deve ser criado e evoluído de forma reprodutível e controlada em qualquer ambiente.
+- **Decisão:** Implementar um mecanismo simples de migrações SQL versionadas (`001-initial-schema.sql`) rastreadas na tabela `schema_migrations`.
+- **Consequências:** Inicialização idempotente, sem necessidade de frameworks ORM pesados.
+
+---
+
+### ADR-027: Repositórios Controlam Atomicidade de Gravações Multi-Tabela
+- **Status:** Aceito
+- **Contexto:** Agregados com tabelas relacionais auxiliares (ex: `Fact` + `fact_parents`, `Hypothesis` + `evidence`) exigem integridade atômica.
+- **Decisão:** Os adaptadores de repositório executam operações de persistência multi-tabela dentro de transações de banco de dados (`db.transaction()`).
+- **Consequências:** Prevenção de estados parciais e órfãos em caso de falha durante a gravação.
+
+---
+
+### ADR-028: Banco Local Não é Versionado no Git
+- **Status:** Aceito
+- **Contexto:** Arquivos de banco de dados em runtime contêm dados transitórios de teste ou desenvolvimento local e não devem poluir o repositório de código.
+- **Decisão:** Adicionar `/data/*.db`, `*.sqlite` e artefatos de WAL/Journal explicitamente ao `.gitignore`.
+- **Consequências:** Repositório Git limpo e livre de arquivos binários voláteis.
+
+---
+
+### ADR-029: SQLite é Solução de MVP/Local, Não Decisão Definitiva de Produção
+- **Status:** Aceito
+- **Contexto:** Aplicações de produção multi-instância exigem concorrência de escrita distribuída que excede a proposta do SQLite.
+- **Decisão:** O SQLite atende o MVP e desenvolvimento local; no futuro, novos adaptadores PostgreSQL serão criados implementando as mesmas portas de repositório.
+- **Consequências:** Evolução arquitetural segura sem lock-in de fornecedor ou tecnologia de banco.

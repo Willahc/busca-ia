@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createMissingEventId, createPersonId } from "@/domain";
+import { createMissingEventId, createPersonId, Person } from "@/domain";
 import {
   RegisterMissingEvent,
   ConflictError,
@@ -35,15 +35,7 @@ describe("RegisterMissingEvent Use Case", () => {
 
   it("6. should register a MissingEvent with incomplete information when Person exists", async () => {
     const personId = createPersonId("PERSON-TEST-001");
-    await personRepo.save({
-      id: personId,
-      facts: [],
-      createdAt: new Date(),
-      addFact: () => ({}) as any,
-      getFact: () => undefined,
-      getConfirmedFacts: () => [],
-      getAllFacts: () => [],
-    });
+    await personRepo.save(new Person({ id: personId }));
 
     const eventId = createMissingEventId("EVENT-TEST-001");
     const event = await useCase.execute({
