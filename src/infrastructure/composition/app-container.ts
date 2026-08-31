@@ -19,6 +19,7 @@ import {
   TipRepository,
   UpdateOfficialStatus,
   AnalyzeCaseTimeline,
+  ComparePersonCandidates,
 } from "@/application";
 import { AuditRepository } from "@/security";
 import {
@@ -59,6 +60,7 @@ export interface AppUseCases {
   readonly changeCaseWorkflowStatus: ChangeCaseWorkflowStatus;
   readonly updateOfficialStatus: UpdateOfficialStatus;
   readonly analyzeCaseTimeline: AnalyzeCaseTimeline;
+  readonly comparePersonCandidates: ComparePersonCandidates;
 }
 
 export interface AppContainer {
@@ -112,6 +114,11 @@ export function createAppContainer(options: SqliteConnectionOptions = {}): AppCo
       tipRepository,
       evidenceRepository,
       hypothesisRepository
+    ),
+    comparePersonCandidates: new ComparePersonCandidates(
+      caseRepository,
+      personRepository,
+      factRepository
     ),
   };
 

@@ -326,3 +326,50 @@ Todos os comandos abaixo exigem ator autenticado e permissão correspondente:
   }
 }
 ```
+
+### 6.12. `POST /api/v1/cases/:caseId/entity-resolution/compare`
+
+- **Permissão exigida:** `ENTITY_RESOLUTION_COMPARE`, escopada ao `caseId`.
+- **Papéis autorizados:** `ANALYST`, `LAW_ENFORCEMENT`, `CASE_MANAGER`.
+- **Privacidade:** `SEALED` falha fechado; `LAW_ENFORCEMENT_ONLY` exige autorização policial.
+- **Vínculo:** ambas as pessoas precisam pertencer ao contexto analítico do caso; a principal é implícita e adicionais usam o Fact controlado documentado em `ENTITY_RESOLUTION.md`.
+- **Payload:**
+
+```json
+{
+  "leftPersonId": "PERSON-LEFT",
+  "rightPersonId": "PERSON-RIGHT"
+}
+```
+
+- **Resposta (`200 OK`), inclusive para dados insuficientes e incompatibilidade:**
+
+```json
+{
+  "data": {
+    "caseId": "CASE-001",
+    "leftCandidateId": "PERSON-LEFT",
+    "rightCandidateId": "PERSON-RIGHT",
+    "conclusion": "REQUIRES_HUMAN_REVIEW",
+    "comparisons": [
+      {
+        "attribute": "BIRTH_DATE",
+        "outcome": "PARTIAL_MATCH",
+        "discriminativePower": "MEDIUM",
+        "contradictionSeverity": "NONE",
+        "reasonCode": "BIRTH_DATE_PRECISION_CONTAINMENT",
+        "sourceFactIdsLeft": ["FACT-LEFT-DOB"],
+        "sourceFactIdsRight": ["FACT-RIGHT-DOB"],
+        "epistemicStatusLeft": "CONFIRMED",
+        "epistemicStatusRight": "UNVERIFIED"
+      }
+    ],
+    "hardContradictions": [],
+    "highDiscriminationMatches": [],
+    "unknownAttributes": ["FATHER_NAME"],
+    "issues": []
+  }
+}
+```
+
+O DTO omite intencionalmente os valores comparados. Erros esperados: `400` para payload inválido, `401` sem ator, `403` sem permissão/escopo/privacidade, `404` para entidade vinculada ausente e `422` para comparação semanticamente inválida. O endpoint não persiste resultados nem modifica entidades canônicas.

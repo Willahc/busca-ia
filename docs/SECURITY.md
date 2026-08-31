@@ -95,6 +95,7 @@ export interface ActorContext {
 | `CASE_VIEW_LAW_ENFORCEMENT`| ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | `CASE_VIEW_SEALED` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `TIMELINE_ANALYZE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `ENTITY_RESOLUTION_COMPARE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
 | `AUDIT_VIEW` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | `SYSTEM_ADMINISTRATION`| ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
@@ -115,6 +116,12 @@ Os níveis de privacidade são independentes de `WorkflowStatus`, `OfficialStatu
 5. **`SEALED`**: Segredo de justiça / proteção máxima. **Falha fechada (`DENY_SEALED`)** por padrão.
 
 ---
+
+### 5.1. Entity Resolution
+
+`ENTITY_RESOLUTION_COMPARE` é uma permissão investigativa concedida somente a `ANALYST`, `LAW_ENFORCEMENT` e `CASE_MANAGER`. A política central continua exigindo escopo explícito de caso, nível de privacidade e bloqueio deny-by-default de `SEALED`. `SYSTEM_ADMIN` não recebe a permissão.
+
+O endpoint protegido audita `SUCCEEDED`, `DENIED` e `FAILED` com metadados minimizados. O identificador do recurso contém apenas `caseId`, `leftPersonId` e `rightPersonId`; valores de atributos e o resultado analítico não são armazenados na auditoria.
 
 ## 6. Dev Actor Resolver e Regra de Segurança em Produção
 
