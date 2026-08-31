@@ -1,17 +1,26 @@
 # Arquitetura do Sistema
 
 > **Documento:** `docs/ARCHITECTURE.md`  
-> **Versão:** 1.3.0 (Gate 4 — Persistência SQLite Local e Inversão de Dependência)
+> **Versão:** 1.4.0 (Gate 5 — Fronteira HTTP e Composition Root)
 
 ---
 
 ## 1. Visão Geral em Camadas e Boundaries
 
-O sistema adota uma arquitetura em camadas estritamente desacoplada (Clean Architecture / Hexagonal Ports & Adapters), garantindo que as regras analíticas e os fluxos de caso de uso independam de mecanismos de entrega, bancos de dados e integrações externas.
+O sistema adota uma arquitetura hexagonal estritamente desacoplada (Clean Architecture / Ports & Adapters), garantindo que as regras analíticas e os fluxos de caso de uso independam de mecanismos de entrega, bancos de dados e integrações externas.
 
 ```
        +-------------------------------------------------------+
-       |             Presentation (src/app, components)        |
+       |             HTTP Request (Clients / UI)               |
+       +-------------------------------------------------------+
+                                  |
+                                  v
+       +-------------------------------------------------------+
+       |        Presentation / API (src/app/api/)              |
+       |        - Route Handlers                               |
+       |        - Input Validation (Zod)                       |
+       |        - DTO Mappers                                  |
+       |        - Centralized Error Handler                    |
        +-------------------------------------------------------+
                                   |
                                   v
@@ -34,6 +43,7 @@ O sistema adota uma arquitetura em camadas estritamente desacoplada (Clean Archi
 +---------------+       +--------------------+       +--------------------+
 | Intelligence  |       |   Infrastructure   |       |      Security      |
 | (src/intel..) |       | (src/infrastruct.) |       |   (src/security)   |
+|               |       | - Composition Root |       |                    |
 |               |       | - SQLite Repos     |       |                    |
 |               |       | - Mappers          |       |                    |
 |               |       | - Migrations       |       |                    |
@@ -45,12 +55,14 @@ O sistema adota uma arquitetura em camadas estritamente desacoplada (Clean Archi
                         +--------------------+
 ```
 
-### 1.1. Presentation (`src/app/`, `src/components/`)
-- Camada de interface e pontos de entrada (UI Next.js, futuras rotas de API ou interfaces de comando).
-- **Regra Mandatória:** **NUNCA** acessa ou manipula o `Domain` diretamente. Toda operação passa por um `UseCase` da camada `Application`.
+### 1.1. Presentation / API (`src/app/api/`)
+- Adaptador de entrada HTTP estruturado sob o Next.js App Router (`/api/v1/` e probes `/api/health`, `/api/readiness`).
+- Valida formato e tipos via Zod e mapeia retornos para DTOs planos.
+- **Regra Mandatória:** **NUNCA** acessa ou manipula o `Domain` diretamente e **NUNCA** instancia repositórios SQLite de forma direta. Toda dependência é provida pela Composition Root.
+- Para detalhes, consulte [`docs/API.md`](API.md).
 
 ### 1.2. Application (`src/application/`) — Casos de Uso e Orquestração
-- Orquestra fluxos investigativos, valida coerência referencial e pré-condições.
+- Orquestra fluxos investigativos, valida coerência referencial cruzada e pré-condições.
 - Invoca métodos do Domínio e persiste resultados através de **Repository Ports** assíncronos.
 - Para detalhes, consulte [`docs/APPLICATION_LAYER.md`](APPLICATION_LAYER.md).
 
@@ -68,8 +80,9 @@ Implementa motores de análise especializados via adaptadores desacoplados:
 - `graph/`: Modelagem e travessia de grafos relacionais do caso.
 - `nlp/`: Extração de entidades estruturadas a partir de relatos livres (preservando o texto bruto).
 
-### 1.5. Infrastructure (`src/infrastructure/`) — Persistência e Integrações
+### 1.5. Infrastructure (`src/infrastructure/`) — Persistência e Composition Root
 - Implementa as interfaces de portas (`*Repository`) definidas na camada de aplicação.
+- Centraliza o container de dependências (`AppContainer`) na Composition Root (`src/infrastructure/composition/`).
 - Contém conexões de banco de dados (`better-sqlite3`), mappers bi-direcionais, migrations SQL versionadas e controle transacional atômico.
 - Para detalhes, consulte [`docs/PERSISTENCE.md`](PERSISTENCE.md).
 
@@ -119,19 +132,3 @@ As seguintes invariantes de integridade epistêmica são impostas em tempo de co
 3. **Invariante de Rastreabilidade Derivada:** Qualquer dado `DERIVED` deve obrigatoriamente manter referências explícitas aos dados primários dos quais foi gerado (`parentFactIds`).
 4. **Invariante de Exibição:** Dados `UNVERIFIED` ou `HYPOTHESIS` nunca podem ser exibidos ou reportados como fatos confirmados.
 5. **Invariante de Auditoria:** Toda e qualquer alteração de estado epistêmico, reclassificação ou promoção de hipótese deve gerar um registro de auditoria imutável detalhando autor, motivo, data/hora e regras aplicadas.
-
----
-
-## 5. Modelo de Scoring Investigativo
-
-O motor de scoring **NÃO** deve ser implementado como uma soma ingênua de pesos fixos (`score = peso1 * atrib + peso2 * geo + peso3 * tempo`), pois fórmulas lineares simplistas produzem falsa precisão e mascaram contradições críticas.
-
-O cálculo investigativo é estruturado em múltiplas dimensões analíticas explícitas:
-
-1. **`compatibility` (Compatibilidade):** Avalia se as características observadas são mutuamente possíveis.
-2. **`discriminative_power` (Poder Discriminatório):** Mede o quanto determinado atributo reduz o espaço amostral.
-3. **`source_trust` (Confiabilidade da Fonte):** Modela a credibilidade e a natureza da fonte.
-4. **`corroboration` (Corroboração Independente):** Mede o suporte mútuo fornecido por fontes comprovadamente independentes.
-5. **`contradictions` (Contradições Suaves):** Registra divergências explicáveis por imprecisão de relato ou estimativa.
-6. **`hard_contradictions` (Contradições Rígidas):** Fatos excludentes irreconciliáveis (anulam formalmente a hipótese de identidade).
-7. **`information_gain` (Ganho de Informação):** Quantifica o quanto uma nova evidência reduz a incerteza global do caso.

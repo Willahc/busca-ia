@@ -118,3 +118,26 @@ synthetic-data/            # Datasets sintéticos isolados para testes e benchma
 Arquivos/                  # Diretório local preexistente (preservado)
 Imagens/                   # Diretório local preexistente (preservado)
 ```
+
+---
+
+## 10. API HTTP Local (Ambiente de Desenvolvimento)
+
+A partir do Gate 5, a plataforma dispõe de uma fronteira HTTP operacional estruturada no Next.js App Router (`/api/v1/`) acoplada a uma Composition Root centralizada e persistência SQLite local (`data/busca-ia.db`):
+
+- **Health Probe:** `GET /api/health`
+- **Readiness Probe:** `GET /api/readiness`
+- **Comandos Operacionais (v1):**
+  - `POST /api/v1/sources`
+  - `POST /api/v1/persons`
+  - `POST /api/v1/missing-events`
+  - `POST /api/v1/cases`
+  - `POST /api/v1/facts`
+  - `POST /api/v1/tips`
+  - `POST /api/v1/evidence`
+  - `POST /api/v1/hypotheses`
+  - `PATCH /api/v1/cases/:caseId/workflow-status`
+  - `PATCH /api/v1/cases/:caseId/official-status`
+
+> **Nota:** A API atual é restrita a testes e desenvolvimento local e não possui autenticação nem endpoints de busca/listagem pública. Para documentação completa de endpoints e contratos, consulte [`docs/API.md`](docs/API.md).
+
