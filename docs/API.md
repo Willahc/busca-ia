@@ -268,3 +268,61 @@ Todos os comandos abaixo exigem ator autenticado e permissão correspondente:
   }
 }
 ```
+
+### 6.11. `POST /api/v1/cases/:caseId/timeline/analyze`
+- **Permissão Exigida:** `TIMELINE_ANALYZE` (escopado ao `caseId`)
+- **Papeis Autorizados:** `ANALYST`, `LAW_ENFORCEMENT`, `CASE_MANAGER`
+- **Payload:** `{}` (Corpo vazio)
+- **Resposta Sucesso (`200 OK`):**
+```json
+{
+  "data": {
+    "caseId": "CASE-001",
+    "status": "ANALYZED",
+    "events": [
+      {
+        "eventId": "EVT-ME-EVENT-001",
+        "caseId": "CASE-001",
+        "eventType": "MISSING_EVENT",
+        "label": "Missing event registered",
+        "temporalExpression": {
+          "precision": "EXACT",
+          "isApproximate": false,
+          "minUtcIso": "2026-08-30T10:00:00.000Z",
+          "maxUtcIso": "2026-08-30T10:00:00.000Z"
+        },
+        "epistemicStatus": "CONFIRMED",
+        "sourceFactIds": [],
+        "sourceTipIds": [],
+        "sourceEvidenceIds": [],
+        "derived": false,
+        "metadata": {
+          "missingEventId": "EVENT-001",
+          "personId": "PERSON-001"
+        }
+      }
+    ],
+    "relations": [
+      {
+        "leftEventId": "EVT-FACT-FACT-01",
+        "rightEventId": "EVT-ME-EVENT-001",
+        "relation": "BEFORE",
+        "explanation": "Event EVT-FACT-FACT-01 precedes event EVT-ME-EVENT-001"
+      }
+    ],
+    "contradictions": [],
+    "gaps": [
+      {
+        "startEventId": "EVT-FACT-FACT-01",
+        "endEventId": "EVT-ME-EVENT-001",
+        "durationMinutes": 960,
+        "durationDays": 0,
+        "classification": "KNOWN_GAP",
+        "explanation": "Chronological gap between events"
+      }
+    ],
+    "derivations": [],
+    "unresolvedEvents": []
+  }
+}
+```

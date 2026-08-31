@@ -94,6 +94,7 @@ export interface ActorContext {
 | `CASE_VIEW_CONFIDENTIAL`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
 | `CASE_VIEW_LAW_ENFORCEMENT`| ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | `CASE_VIEW_SEALED` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `TIMELINE_ANALYZE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
 | `AUDIT_VIEW` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | `SYSTEM_ADMINISTRATION`| ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 

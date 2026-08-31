@@ -304,3 +304,75 @@
 - **Contexto:** Executar uma operação sensível sem conseguir registrá-la na auditoria compromete a governança forense do sistema.
 - **Decisão:** Se a gravação de auditoria falhar em uma operação protegida, a requisição não finge sucesso e falha de forma segura.
 - **Consequências:** Integridade intransigível da trilha de auditoria.
+
+---
+
+### ADR-048: Camada Dedicada de Inteligência Temporal Isolada
+- **Status:** Aceito
+- **Contexto:** Motores analíticos de inteligência não pertencem ao modelo canônico de domínio nem à infraestrutura ou API.
+- **Decisão:** Criar a camada `src/intelligence/temporal/` contendo motores determinísticos, puros e sem efeitos colaterais.
+- **Consequências:** Alto desacoplamento, testabilidade estrita e ausência de dependências de framework dentro dos motores.
+
+---
+
+### ADR-049: Invariante Epistêmica da Ausência de Informação Temporal
+- **Status:** Aceito
+- **Contexto:** No contexto de pessoas desaparecidas, a falta de registros ou a existência de grandes intervalos cronológicos é uma condição comum de investigação, e não inconsistência lógica.
+- **Decisão:** Ausência de dados temporais e lapsos cronológicos (`gaps`) são epistemicamente neutros e NUNCA disparam contradições lógicas.
+- **Consequências:** Eliminação total de falsos positivos na avaliação de consistência cronológica.
+
+---
+
+### ADR-050: Modelagem Explícita de Precisão Temporal Multi-Escala
+- **Status:** Aceito
+- **Contexto:** Projetar expressões parciais ("agosto de 2026") como objetos `Date` (`2026-08-01T00:00:00Z`) forja precisão inexistente e causa desvios de fuso horário.
+- **Decisão:** Implementar `TemporalPrecision` (`EXACT`, `DAY`, `MONTH`, `YEAR`, `APPROXIMATE`, `INTERVAL`, `UNKNOWN`), `TemporalPoint` e `TemporalInterval` que mantêm o nível de granularidade nativo.
+- **Consequências:** Fidelidade aos dados de origem e eliminação de artefatos de fuso horário.
+
+---
+
+### ADR-051: Relações Temporais Determinísticas de Intervalos
+- **Status:** Aceito
+- **Contexto:** Comparar eventos investigativos com diferentes precisões requer álgebra temporal estruturada.
+- **Decisão:** Implementar `TemporalRelationEvaluator` que classifica pares em `BEFORE`, `AFTER`, `EQUAL`, `OVERLAPS`, `CONTAINS`, `CONTAINED_BY` ou `INDETERMINATE`.
+- **Consequências:** Análise cronológica formal, reprodutível e independente de heurísticas probabilísticas.
+
+---
+
+### ADR-052: Separação Estrita entre Data de Ingestão e Data de Ocorrência
+- **Status:** Aceito
+- **Contexto:** Denúncias (`Tip.receivedAt`) e evidências (`Evidence.recordedAt`) marcam quando o dado entrou no sistema, não quando o evento relatado ocorreu no mundo físico.
+- **Decisão:** `TimelineBuilder` classifica explicitamente eventos de recepção e custódia sem projetá-los como observações de fatos primários.
+- **Consequências:** Proteção contra confusão entre tempo do relato e tempo do fato.
+
+---
+
+### ADR-053: Teto de Precisão em Derivações Temporais
+- **Status:** Aceito
+- **Contexto:** Derivar durações ou intervalos entre eventos com diferentes precisões não pode amplificar a certeza cronológica.
+- **Decisão:** A precisão do resultado derivado pelo `TemporalDerivationEngine` é limitada ao menor grau de precisão (`coarsest input precision`) entre os termos participantes.
+- **Consequências:** Proibição de inventar minutos ou segundos a partir de datas imprecisas.
+
+---
+
+### ADR-054: Regras Explícitas e Controladas de Contradição Temporal
+- **Status:** Aceito
+- **Contexto:** Contradições não devem ser inferidas por similaridade ou divergências pontuais irrelevantes.
+- **Decisão:** Avaliar contradições temporais estritamente por regras determinísticas declaradas: `EXACT_TIMESTAMP_CONFLICT`, `NON_OVERLAPPING_EXCLUSIVE_INTERVALS` e `IMPOSSIBLE_SEQUENCE`.
+- **Consequências:** Clareza, auditabilidade e rastreabilidade total das causas de conflito temporal.
+
+---
+
+### ADR-055: Fail-Closed e Escopo de Caso na Análise de Linha do Tempo
+- **Status:** Aceito
+- **Contexto:** A análise temporal consolida toda a inteligência do caso e deve obedecer à política de segurança restrita.
+- **Decisão:** Proteger `POST /api/v1/cases/[caseId]/timeline/analyze` com permissão `TIMELINE_ANALYZE`, restrição por escopo de caso para analistas e bloqueio de casos `SEALED`.
+- **Consequências:** Impossibilidade de acesso não autorizado à linha do tempo analítica.
+
+---
+
+### ADR-056: Otimização de Consultas Temporais via Índices SQLite
+- **Status:** Aceito
+- **Contexto:** A recuperação de todos os fatos, relatos, evidências e hipóteses associados a um caso exige buscas rápidas por chaves estrangeiras.
+- **Decisão:** Adicionar índices na migração `004-temporal-query-indexes.sql` para `facts(subject_id)`, `tips(case_id)`, `evidence(case_id)` e `hypotheses(case_id)`.
+- **Consequências:** Execução rápida da montagem da timeline sem degradação em bases crescentes.

@@ -44,7 +44,7 @@ describe("SQLite Migrations and Schema", () => {
     }).not.toThrow();
 
     const count = db.prepare("SELECT count(*) as count FROM schema_migrations").get() as { count: number };
-    expect(count.count).toBe(3);
+    expect(count.count).toBe(4);
   });
 
   it("3. should register applied migrations in schema_migrations table", () => {

@@ -18,6 +18,7 @@ import {
   SourceRepository,
   TipRepository,
   UpdateOfficialStatus,
+  AnalyzeCaseTimeline,
 } from "@/application";
 import { AuditRepository } from "@/security";
 import {
@@ -57,6 +58,7 @@ export interface AppUseCases {
   readonly createHypothesis: CreateHypothesis;
   readonly changeCaseWorkflowStatus: ChangeCaseWorkflowStatus;
   readonly updateOfficialStatus: UpdateOfficialStatus;
+  readonly analyzeCaseTimeline: AnalyzeCaseTimeline;
 }
 
 export interface AppContainer {
@@ -103,6 +105,14 @@ export function createAppContainer(options: SqliteConnectionOptions = {}): AppCo
     createHypothesis: new CreateHypothesis(hypothesisRepository, caseRepository, evidenceRepository),
     changeCaseWorkflowStatus: new ChangeCaseWorkflowStatus(caseRepository),
     updateOfficialStatus: new UpdateOfficialStatus(caseRepository, sourceRepository),
+    analyzeCaseTimeline: new AnalyzeCaseTimeline(
+      caseRepository,
+      missingEventRepository,
+      factRepository,
+      tipRepository,
+      evidenceRepository,
+      hypothesisRepository
+    ),
   };
 
   return {

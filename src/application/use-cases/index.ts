@@ -8,3 +8,4 @@ export * from "./add-evidence";
 export * from "./create-hypothesis";
 export * from "./change-case-workflow-status";
 export * from "./update-official-status";
+export * from "./analyze-case-timeline";

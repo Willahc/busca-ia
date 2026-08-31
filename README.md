@@ -138,10 +138,12 @@ A plataforma dispõe de uma fronteira HTTP operacional estruturada no Next.js Ap
   - `POST /api/v1/hypotheses` (`HYPOTHESIS_CREATE`, escopado ao caso)
   - `PATCH /api/v1/cases/:caseId/workflow-status` (`CASE_WORKFLOW_UPDATE`, escopado ao caso)
   - `PATCH /api/v1/cases/:caseId/official-status` (`CASE_OFFICIAL_STATUS_UPDATE`, escopado ao caso)
+  - `POST /api/v1/cases/:caseId/timeline/analyze` (`TIMELINE_ANALYZE`, escopado ao caso)
 
 ### Documentação Técnica de Referência:
+- [`docs/TEMPORAL_INTELLIGENCE.md`](docs/TEMPORAL_INTELLIGENCE.md) — Reconstrução de linha do tempo, precisão multi-escala, relações de Allen, gaps e contradições controladas.
 - [`docs/SECURITY.md`](docs/SECURITY.md) — Modelo de ameaças, papéis, permissões, níveis de privacidade e deny-by-default.
 - [`docs/AUDIT.md`](docs/AUDIT.md) — Trilha de auditoria persistente e princípio de minimização de dados.
 - [`docs/API.md`](docs/API.md) — Especificação completa de contratos de endpoints, esquemas Zod e envelopes DTO.
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — 47 Registros de Decisões de Arquitetura (ADR-001 a ADR-047).
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — 56 Registros de Decisões de Arquitetura (ADR-001 a ADR-056).
 
