@@ -9,3 +9,4 @@ export * from "./create-hypothesis";
 export * from "./change-case-workflow-status";
 export * from "./update-official-status";
 export * from "./analyze-case-timeline";
+export * from "./compare-person-candidates";

@@ -376,3 +376,49 @@
 - **Contexto:** A recuperação de todos os fatos, relatos, evidências e hipóteses associados a um caso exige buscas rápidas por chaves estrangeiras.
 - **Decisão:** Adicionar índices na migração `004-temporal-query-indexes.sql` para `facts(subject_id)`, `tips(case_id)`, `evidence(case_id)` e `hypotheses(case_id)`.
 - **Consequências:** Execução rápida da montagem da timeline sem degradação em bases crescentes.
+
+---
+
+### ADR-057: Entity Resolution is Analytical and Non-Authoritative
+- **Status:** Aceito
+- **Decisão:** O motor produz avaliações analíticas determinísticas e nunca uma decisão autoritativa de identidade.
+
+### ADR-058: Compatibility Never Equals Identity Confirmation
+- **Status:** Aceito
+- **Decisão:** `COMPATIBLE` descreve apenas regras de compatibilidade satisfeitas e jamais confirma que dois registros são a mesma pessoa.
+
+### ADR-059: Missing Attributes are UNKNOWN, not MATCH or Contradiction
+- **Status:** Aceito
+- **Decisão:** Atributos ausentes ou inválidos resultam em `UNKNOWN`, semanticamente neutro.
+
+### ADR-060: Discriminative Power is Categorical, not Numerical
+- **Status:** Aceito
+- **Decisão:** Poder discriminativo usa `LOW`, `MEDIUM`, `HIGH` e `VERY_HIGH`, sem pesos, soma ou média.
+
+### ADR-061: Hard Contradictions can Invalidate Compatibility
+- **Status:** Aceito
+- **Decisão:** Uma regra explícita `HARD` leva a `INCOMPATIBLE`; no Gate 8, a regra é conflito entre datas exatas confirmadas.
+
+### ADR-062: Attribute Assertions Preserve Epistemic Status and Provenance
+- **Status:** Aceito
+- **Decisão:** Cada assertion preserva `FactId`, `SourceId` e estado epistêmico, sem promoção automática.
+
+### ADR-063: Multiple Assertions are not Silently Collapsed
+- **Status:** Aceito
+- **Decisão:** Todas as assertions participam da avaliação; conflitos internos confirmados são issues explícitas.
+
+### ADR-064: Entity Resolution does not Auto-Merge Persons
+- **Status:** Aceito
+- **Decisão:** A comparação não altera nem mescla `Person`, `Fact` ou `Case`.
+
+### ADR-065: No Global Entity Resolution Score in Gate 8
+- **Status:** Aceito
+- **Decisão:** O resultado lista evidências e contradições categóricas sem valor agregado ou probabilidade global.
+
+### ADR-066: Pairwise Comparison Only in Gate 8
+- **Status:** Aceito
+- **Decisão:** Cada execução compara um único par autorizado; não há varredura global ou matching `N x N`.
+
+### ADR-067: ENTITY_RESOLUTION_COMPARE Requires Investigative Authorization and Case Scope
+- **Status:** Aceito
+- **Decisão:** A operação exige permissão investigativa explícita, escopo de caso e política de privacidade; `SYSTEM_ADMIN` não a recebe.

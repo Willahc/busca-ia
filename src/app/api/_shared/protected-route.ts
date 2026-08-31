@@ -25,6 +25,7 @@ export interface ProtectedCommandOptions {
 
 export interface ProtectedContext {
   readonly container: AppContainer;
+  readonly setAuditResourceId: (resourceId: string) => void;
 }
 
 export async function executeProtectedCommand(
@@ -36,6 +37,7 @@ export async function executeProtectedCommand(
   const container = getApplicationContainer();
   const requestId = actor.requestId;
   let targetResourceId = options.resourceId ?? options.caseId ?? null;
+  let auditResourceExplicitlySet = false;
 
   try {
     // 1. Authenticated Check
@@ -99,13 +101,19 @@ export async function executeProtectedCommand(
     }
 
     // 3. Execute Handler
-    const response = await handler({ container });
+    const response = await handler({
+      container,
+      setAuditResourceId(resourceId: string) {
+        targetResourceId = resourceId;
+        auditResourceExplicitlySet = true;
+      },
+    });
 
     // Extract resourceId from success payload if available
     try {
       const cloned = response.clone();
       const body = await cloned.json();
-      if (body?.data) {
+      if (body?.data && !auditResourceExplicitlySet) {
         targetResourceId =
           body.data.evidenceId ||
           body.data.tipId ||

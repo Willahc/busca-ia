@@ -16,7 +16,9 @@ import {
   TemporalPoint,
   TemporalRelation,
   TimelineEvent,
+  AttributeComparison,
 } from "@/intelligence";
+import type { ComparePersonCandidatesResult } from "@/application";
 
 export interface SourceDto {
   readonly sourceId: string;
@@ -344,5 +346,76 @@ export function toTemporalAnalysisResultDto(
     })),
     unresolvedEvents: result.unresolvedEvents.map(toTimelineEventDto),
     generatedAt: result.generatedAt ? result.generatedAt.toISOString() : undefined,
+  };
+}
+
+export interface EntityResolutionComparisonDto {
+  readonly attribute: string;
+  readonly outcome: string;
+  readonly discriminativePower: string;
+  readonly contradictionSeverity: string;
+  readonly reasonCode: string;
+  readonly sourceFactIdsLeft: readonly string[];
+  readonly sourceFactIdsRight: readonly string[];
+  readonly epistemicStatusLeft: string | null;
+  readonly epistemicStatusRight: string | null;
+}
+
+export interface EntityResolutionResultDto {
+  readonly caseId: string;
+  readonly leftCandidateId: string;
+  readonly rightCandidateId: string;
+  readonly conclusion: string;
+  readonly comparisons: readonly EntityResolutionComparisonDto[];
+  readonly hardContradictions: readonly EntityResolutionComparisonDto[];
+  readonly highDiscriminationMatches: readonly EntityResolutionComparisonDto[];
+  readonly unknownAttributes: readonly string[];
+  readonly issues: readonly {
+    code: string;
+    candidateId: string;
+    attribute: string;
+    sourceFactIds: readonly string[];
+  }[];
+}
+
+function toEntityResolutionComparisonDto(
+  item: AttributeComparison
+): EntityResolutionComparisonDto {
+  return {
+    attribute: item.attribute,
+    outcome: item.outcome,
+    discriminativePower: item.discriminativePower,
+    contradictionSeverity: item.contradictionSeverity,
+    reasonCode: item.reasonCode,
+    sourceFactIdsLeft: item.sourceFactIdsLeft,
+    sourceFactIdsRight: item.sourceFactIdsRight,
+    epistemicStatusLeft: item.epistemicStatusLeft,
+    epistemicStatusRight: item.epistemicStatusRight,
+  };
+}
+
+/** Privacy-minimized DTO: compared raw/normalized values are deliberately omitted. */
+export function toEntityResolutionResultDto(
+  result: ComparePersonCandidatesResult
+): EntityResolutionResultDto {
+  return {
+    caseId: result.caseId,
+    leftCandidateId: result.leftCandidateId,
+    rightCandidateId: result.rightCandidateId,
+    conclusion: result.conclusion,
+    comparisons: result.comparisons.map(toEntityResolutionComparisonDto),
+    hardContradictions: result.hardContradictions.map(toEntityResolutionComparisonDto),
+    highDiscriminationMatches: result.highDiscriminationMatches.map(
+      toEntityResolutionComparisonDto
+    ),
+    unknownAttributes: [
+      ...new Set(result.unknowns.map((comparison) => comparison.attribute)),
+    ],
+    issues: result.issues.map((issue) => ({
+      code: issue.code,
+      candidateId: issue.candidateId,
+      attribute: issue.attribute,
+      sourceFactIds: issue.sourceFactIds,
+    })),
   };
 }

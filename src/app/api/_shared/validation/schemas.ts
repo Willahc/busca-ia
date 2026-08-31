@@ -236,3 +236,10 @@ export const updateOfficialStatusSchema = z
     provenance: provenanceSchema,
   })
   .strict();
+
+export const comparePersonCandidatesSchema = z
+  .object({
+    leftPersonId: idSchema("leftPersonId"),
+    rightPersonId: idSchema("rightPersonId"),
+  })
+  .strict();

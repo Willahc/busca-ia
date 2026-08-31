@@ -1,7 +1,7 @@
 # Arquitetura do Sistema
 
 > **Documento:** `docs/ARCHITECTURE.md`  
-> **Versão:** 1.6.0 (Gate 7 — Reconstrução de Linha do Tempo e Inteligência Temporal)
+> **Versão:** 1.7.0 (Gate 8 — Entity Resolution)
 
 ---
 
@@ -74,7 +74,8 @@ O sistema adota uma arquitetura hexagonal estritamente desacoplada (Clean Archit
 ### 1.5. Intelligence (`src/intelligence/`) — Motores Analíticos Puros
 - Implementa motores de análise especializados via funções puras e determinísticas (sem relógio interno oculto, sem efeitos colaterais, sem LLM, sem scoring heurístico).
 - **Inteligência Temporal (`src/intelligence/temporal/`):** Reconstrução de linha do tempo multi-escala (`TemporalPrecision`), avaliação de relações de Allen (`BEFORE`, `AFTER`, `OVERLAPS`, `CONTAINS`), cálculo de gaps, detecção de contradições determinísticas (`EXACT_TIMESTAMP_CONFLICT`, `IMPOSSIBLE_SEQUENCE`) e derivação de intervalos.
-- Para detalhes, consulte [`docs/TEMPORAL_INTELLIGENCE.md`](TEMPORAL_INTELLIGENCE.md).
+- **Entity Resolution (`src/intelligence/entity-resolution/`):** Projeção analítica baseada em Facts, assertions múltiplas, normalização determinística, comparação pairwise e conclusões não autoritativas. Não importa Application, Infrastructure, API, Next.js, SQLite ou serviços externos.
+- Para detalhes, consulte [`docs/TEMPORAL_INTELLIGENCE.md`](TEMPORAL_INTELLIGENCE.md) e [`docs/ENTITY_RESOLUTION.md`](ENTITY_RESOLUTION.md).
 
 ### 1.6. Infrastructure (`src/infrastructure/`) — Persistência e Composition Root
 - Implementa as interfaces de portas (`*Repository`, `AuditRepository`) definidas na aplicação e segurança.
@@ -107,3 +108,4 @@ Cada registro ou atributo relevante no sistema carrega metadados formais de conh
 5. **Invariante de Deny by Default:** Toda operação protegida não explicitamente autorizada deve ser sumariamente negada.
 6. **Invariante de Isolamento do Admin:** `SYSTEM_ADMIN` não possui privilégio investigativo ou de alteração de conteúdo de casos.
 7. **Invariante de Minimização da Auditoria:** Eventos de auditoria registram metadados de ação, jamais conteúdos probatórios sensíveis ou relatos brutos.
+8. **Invariante de Compatibilidade:** Resultado analítico compatível nunca confirma identidade e nunca altera ou mescla `Person`/`Fact`.
