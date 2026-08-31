@@ -189,7 +189,7 @@
 
 ---
 
-### ADR-024: Domain e Application Permanecem Agnósticos à Persistência
+### ADR-024: Domain e Application Permanem Agnósticos à Persistência
 - **Status:** Aceito
 - **Contexto:** O vazamento de detalhes de SQL, SQLite ou drivers nas camadas superiores compromete a pureza das regras e testes.
 - **Decisão:** `src/domain/` e `src/application/` são estritamente proibidos de importar qualquer módulo de persistência, drivers SQLite ou SQL.
@@ -234,3 +234,67 @@
 - **Contexto:** Aplicações de produção multi-instância exigem concorrência de escrita distribuída que excede a proposta do SQLite.
 - **Decisão:** O SQLite atende o MVP e desenvolvimento local; no futuro, novos adaptadores PostgreSQL serão criados implementando as mesmas portas de repositório.
 - **Consequências:** Evolução arquitetural segura sem lock-in de fornecedor ou tecnologia de banco.
+
+---
+
+### ADR-030: HTTP API como Inbound Adapter
+- **Status:** Aceito
+- **Contexto:** A camada de entrega HTTP precisa se comunicar com o sistema sem absorver regras de negócio ou de domínio.
+- **Decisão:** Tratar os Route Handlers do Next.js App Router estritamente como adaptadores de entrada (Inbound Adapters), responsáveis apenas por receber requisições, validar formato/tipos e invocar Use Cases.
+- **Consequências:** A API torna-se fina, desacoplada e facilmente testável.
+
+---
+
+### ADR-031: Composition Root Centraliza Wiring de Dependências
+- **Status:** Aceito
+- **Contexto:** Instanciar repositórios e conexões SQLite de forma dispersa em cada endpoint viola o princípio de responsabilidade única e dificulta testes de integração.
+- **Decisão:** Centralizar a montagem do container de dependências (`AppContainer`) na Composition Root (`src/infrastructure/composition/app-container.ts`).
+- **Consequências:** Conexão controlada, inicialização determinística e facilidade para injetar instâncias de teste.
+
+---
+
+### ADR-032: API v1 Versionada
+- **Status:** Aceito
+- **Contexto:** Endpoints de negócio evoluem ao longo do tempo e necessitam de contratos de estabilidade.
+- **Decisão:** Todos os comandos de negócio utilizam o prefixo de rota `/api/v1/`, reservando a raiz `/api/` para probes de infraestrutura (`/api/health`, `/api/readiness`).
+- **Consequências:** Versionamento claro e compatibilidade retroativa facilitada.
+
+---
+
+### ADR-033: HTTP DTOs Não Expõem Entidades de Domain Diretamente
+- **Status:** Aceito
+- **Contexto:** Retornar entidades de domínio ricas diretamente no JSON de resposta expõe detalhes internos, métodos e pode gerar vazamentos acidentais de segurança.
+- **Decisão:** Mapear explicitamente todos os retornos de Use Cases para Data Transfer Objects (DTOs) planos antes da serialização HTTP.
+- **Consequências:** Contratos de API explícitos, seguros e independentes de alterações internas nas classes de domínio.
+
+---
+
+### ADR-034: Validação de Formato no Boundary, Regras Semânticas no Domain/Application
+- **Status:** Aceito
+- **Contexto:** Duplicar validações de negócio na camada de API gera divergências e fragilidade na evolução das regras.
+- **Decisão:** A biblioteca Zod valida apenas formato, tipo, limites de tamanho e preenchimento no boundary HTTP; as regras epistêmicas, de coerência e de negócio são validadas exclusivamente no Domain e na Application.
+- **Consequências:** Separação limpa de responsabilidades e reutilização das validações de negócio em qualquer ponto de entrada.
+
+---
+
+### ADR-035: Error Mapping HTTP Centralizado
+- **Status:** Aceito
+- **Contexto:** Erros de validação, aplicação e domínio precisam ser convertidos para códigos de status HTTP corretos (400, 404, 409, 422, 500) sem vazamento de detalhes sensíveis.
+- **Decisão:** Utilizar `handleHttpError` centralizado para mapear exceções de aplicação e domínio para o envelope padrão `{ error: { code, message, details? } }`, sanitizando 100% dos erros 500.
+- **Consequências:** Respostas consistentes para clientes HTTP e proteção ativa contra vazamento de stack traces e SQL.
+
+---
+
+### ADR-036: Health Separado de Readiness
+- **Status:** Aceito
+- **Contexto:** Orquestradores de contêineres e balanceadores de carga precisam diferenciar se o processo está vivo (liveness) ou pronto para receber tráfego (readiness).
+- **Decisão:** `GET /api/health` verifica apenas a execução do processo Node.js sem tocar no banco (sempre 200), enquanto `GET /api/readiness` valida a conectividade com o SQLite e as migrações.
+- **Consequências:** Resiliência operacional e diagnóstico claro de falhas de banco de dados.
+
+---
+
+### ADR-037: API Sem Autenticação Restrita ao Ambiente Local Durante Esta Fase
+- **Status:** Aceito
+- **Contexto:** A plataforma lida com dados sensíveis de desaparecimento, mas o controle de acesso e autenticação serão introduzidos em gate posterior específico.
+- **Decisão:** A API atual não implementa endpoints de listagem/busca aberta e é estritamente restrita ao ambiente local de desenvolvimento.
+- **Consequências:** Prevenção de vazamento de dados antes da implementação formal de RBAC e auditoria.
