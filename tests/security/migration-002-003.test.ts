@@ -3,7 +3,8 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 import Database from "better-sqlite3";
-import { applyMigrations } from "@/infrastructure";
+import { createCaseId } from "@/domain";
+import { applyMigrations, SqliteCaseRepository } from "@/infrastructure";
 
 describe("Backward Compatibility: Migration 001 -> 002 + 003", () => {
   let tempDbPath: string | null = null;
@@ -22,7 +23,7 @@ describe("Backward Compatibility: Migration 001 -> 002 + 003", () => {
     }
   });
 
-  it("should upgrade an existing Gate 4/5 database without data loss and apply new schema", () => {
+  it("should upgrade an existing Gate 4/5 database without data loss and apply new schema", async () => {
     tempDbPath = path.join(os.tmpdir(), `buscaia-migration-compat-${Date.now()}.db`);
     const db = new Database(tempDbPath);
 
@@ -88,11 +89,17 @@ describe("Backward Compatibility: Migration 001 -> 002 + 003", () => {
     expect(migrations).toHaveLength(3);
     expect(migrations.map((m) => m.version)).toEqual([1, 2, 3]);
 
-    // 4. Verify existing case record was upgraded with default privacy_level 'RESTRICTED'
-    const upgradedCase = db.prepare("SELECT * FROM cases WHERE case_id = 'CASE-LEGACY-001'").get() as { case_id: string; privacy_level: string };
-    expect(upgradedCase).not.toBeNull();
-    expect(upgradedCase.case_id).toBe("CASE-LEGACY-001");
-    expect(upgradedCase.privacy_level).toBe("RESTRICTED");
+    // 4. Verify existing case record was upgraded with default privacy_level 'RESTRICTED' and all fields preserved
+    const caseRepo = new SqliteCaseRepository(db);
+    const loadedLegacyCase = await caseRepo.findById(createCaseId("CASE-LEGACY-001"));
+    expect(loadedLegacyCase).not.toBeNull();
+    expect(loadedLegacyCase?.id).toBe("CASE-LEGACY-001");
+    expect(loadedLegacyCase?.personId).toBe("PERSON-LEGACY-001");
+    expect(loadedLegacyCase?.missingEventId).toBe("EVENT-LEGACY-001");
+    expect(loadedLegacyCase?.workflowStatus).toBe("ACTIVE");
+    expect(loadedLegacyCase?.officialStatus).toBe("STATUS_TO_VERIFY");
+    expect(loadedLegacyCase?.privacyLevel).toBe("RESTRICTED");
+    expect(loadedLegacyCase?.createdAt).toEqual(new Date("2026-08-31T00:00:00Z"));
 
     // 5. Verify audit_events table exists and is operational
     const auditCount = db.prepare("SELECT count(*) as count FROM audit_events").get() as { count: number };

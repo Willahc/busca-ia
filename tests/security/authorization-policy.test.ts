@@ -141,4 +141,40 @@ describe("Security Core: Authorization Policy Engine", () => {
     expect(analystDecision.allowed).toBe(false);
     expect(analystDecision.reasonCode).toBe(AUTHORIZATION_REASON_CODES.DENY_PRIVACY_LEVEL);
   });
+
+  it("7. CRITICAL: SYSTEM_ADMIN is denied for all investigative actions and SEALED resources", () => {
+    const adminActor = {
+      actorId: createActorId("SYSADMIN-001"),
+      roles: [ROLES.SYSTEM_ADMIN],
+      requestId: "REQ-ADMIN-001",
+      authenticated: true,
+    };
+
+    const investigativePermissions = [
+      PERMISSIONS.FACT_CREATE,
+      PERMISSIONS.TIP_CREATE,
+      PERMISSIONS.EVIDENCE_CREATE,
+      PERMISSIONS.HYPOTHESIS_CREATE,
+      PERMISSIONS.CASE_WORKFLOW_UPDATE,
+      PERMISSIONS.CASE_OFFICIAL_STATUS_UPDATE,
+    ];
+
+    for (const perm of investigativePermissions) {
+      const decision = authorize({
+        actor: adminActor,
+        permission: perm,
+        resource: { caseId: createCaseId("CASE-001") },
+      });
+      expect(decision.allowed).toBe(false);
+      expect(decision.reasonCode).toBe(AUTHORIZATION_REASON_CODES.DENY_NO_PERMISSION);
+    }
+
+    // Access to SEALED
+    const sealedDecision = authorize({
+      actor: adminActor,
+      permission: PERMISSIONS.CASE_VIEW_SEALED,
+      resource: { privacyLevel: PRIVACY_LEVELS.SEALED },
+    });
+    expect(sealedDecision.allowed).toBe(false);
+  });
 });
