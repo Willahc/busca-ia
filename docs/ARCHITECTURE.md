@@ -1,7 +1,7 @@
 # Arquitetura do Sistema
 
 > **Documento:** `docs/ARCHITECTURE.md`  
-> **Versão:** 1.5.0 (Gate 6 — Fundação de Segurança, RBAC e Contexto de Auditoria)
+> **Versão:** 1.6.0 (Gate 7 — Reconstrução de Linha do Tempo e Inteligência Temporal)
 
 ---
 
@@ -28,13 +28,14 @@ O sistema adota uma arquitetura hexagonal estritamente desacoplada (Clean Archit
        |    Application Use Cases      |  |   AuditRepository   |
        |    (src/application)          |  |  (audit_events tbl) |
        +-------------------------------+  +---------------------+
-               |                              ^
-               v                              |
-       +-------------------------------+      |
-       |   Domain (src/domain) [PURO]  |      |
-       +-------------------------------+      |
-               |                              |
-               v                              |
+          | (Invokes Engine)       | (Uses Repositories)
+          v                        v
+       +--------------------+  +-------------------------------+
+       | Intelligence Layer |  |   Domain (src/domain) [PURO]  |
+       | (src/intelligence) |  +-------------------------------+
+       | - Temporal Engine  |      |
+       +--------------------+      |
+                                   v
        +--------------------------------------+
        |   Infrastructure (src/infrastructure)|
        |   - Composition Root (AppContainer)  |
@@ -62,7 +63,7 @@ O sistema adota uma arquitetura hexagonal estritamente desacoplada (Clean Archit
 
 ### 1.3. Application (`src/application/`) — Casos de Uso e Orquestração
 - Orquestra fluxos investigativos, valida coerência referencial cruzada e pré-condições.
-- Invoca métodos do Domínio e persiste resultados através de **Repository Ports** assíncronos.
+- Invoca métodos do Domínio, motores de Inteligência e persiste resultados através de **Repository Ports** assíncronos.
 - Para detalhes, consulte [`docs/APPLICATION_LAYER.md`](APPLICATION_LAYER.md).
 
 ### 1.4. Domain (`src/domain/`) — Núcleo Puro
@@ -70,13 +71,15 @@ O sistema adota uma arquitetura hexagonal estritamente desacoplada (Clean Archit
 - **Isolamento Absoluto:** O domínio **não conhece** Next.js, React, bancos de dados, ORMs, Application use cases, Security, LLMs ou APIs externas.
 - Para detalhes, consulte [`docs/DOMAIN_MODEL.md`](DOMAIN_MODEL.md).
 
-### 1.5. Intelligence (`src/intelligence/`) — Adaptadores Analíticos
-Implementa motores de análise especializados via adaptadores desacoplados (Entity Resolution, Temporal, Geospatial, Scoring, Graph, NLP).
+### 1.5. Intelligence (`src/intelligence/`) — Motores Analíticos Puros
+- Implementa motores de análise especializados via funções puras e determinísticas (sem relógio interno oculto, sem efeitos colaterais, sem LLM, sem scoring heurístico).
+- **Inteligência Temporal (`src/intelligence/temporal/`):** Reconstrução de linha do tempo multi-escala (`TemporalPrecision`), avaliação de relações de Allen (`BEFORE`, `AFTER`, `OVERLAPS`, `CONTAINS`), cálculo de gaps, detecção de contradições determinísticas (`EXACT_TIMESTAMP_CONFLICT`, `IMPOSSIBLE_SEQUENCE`) e derivação de intervalos.
+- Para detalhes, consulte [`docs/TEMPORAL_INTELLIGENCE.md`](TEMPORAL_INTELLIGENCE.md).
 
 ### 1.6. Infrastructure (`src/infrastructure/`) — Persistência e Composition Root
 - Implementa as interfaces de portas (`*Repository`, `AuditRepository`) definidas na aplicação e segurança.
 - Centraliza o container de dependências (`AppContainer`) na Composition Root (`src/infrastructure/composition/`).
-- Gerencia conexões SQLite (`better-sqlite3`), mappers bi-direcionais, migrações versionadas (`001-initial-schema`, `002-security-audit`, `003-case-privacy-level`) e transações atômicas.
+- Gerencia conexões SQLite (`better-sqlite3`), mappers bi-direcionais, migrações versionadas (`001-initial-schema`, `002-security-audit`, `003-case-privacy-level`, `004-temporal-query-indexes`) e transações atômicas.
 - Para detalhes, consulte [`docs/PERSISTENCE.md`](PERSISTENCE.md).
 
 ---

@@ -8,6 +8,15 @@ import {
   Source,
   Tip,
 } from "@/domain";
+import {
+  TemporalAnalysisResult,
+  TemporalContradiction,
+  TemporalDerivation,
+  TemporalGap,
+  TemporalPoint,
+  TemporalRelation,
+  TimelineEvent,
+} from "@/intelligence";
 
 export interface SourceDto {
   readonly sourceId: string;
@@ -192,5 +201,148 @@ export function toHypothesisDto(hypothesis: Hypothesis): HypothesisDto {
     contradictingEvidenceIds: hypothesis.contradictingEvidenceIds,
     createdAt: hypothesis.createdAt.toISOString(),
     updatedAt: hypothesis.updatedAt.toISOString(),
+  };
+}
+
+export interface TimelineEventDto {
+  readonly eventId: string;
+  readonly caseId: string;
+  readonly eventType: string;
+  readonly label: string;
+  readonly temporalExpression?: {
+    readonly precision: string;
+    readonly isApproximate?: boolean;
+    readonly rawExpression?: string;
+    readonly minUtcIso?: string;
+    readonly maxUtcIso?: string;
+  };
+  readonly epistemicStatus: string;
+  readonly sourceFactIds: readonly string[];
+  readonly sourceTipIds: readonly string[];
+  readonly sourceEvidenceIds: readonly string[];
+  readonly derived: boolean;
+  readonly metadata: Record<string, string>;
+}
+
+export interface TemporalRelationDto {
+  readonly leftEventId: string;
+  readonly rightEventId: string;
+  readonly relation: string;
+  readonly explanation: string;
+}
+
+export interface TemporalContradictionDto {
+  readonly leftEventId: string;
+  readonly rightEventId: string;
+  readonly severity: string;
+  readonly reasonCode: string;
+  readonly explanation: string;
+  readonly sourceFactIds: readonly string[];
+}
+
+export interface TemporalGapDto {
+  readonly startEventId?: string;
+  readonly endEventId?: string;
+  readonly durationMinutes?: number;
+  readonly durationDays?: number;
+  readonly classification: string;
+  readonly explanation: string;
+}
+
+export interface TemporalDerivationDto {
+  readonly derivationId: string;
+  readonly derivedAttribute: string;
+  readonly precision: string;
+  readonly epistemicStatus: string;
+  readonly sourceFactIds: readonly string[];
+  readonly sourceEventIds: readonly string[];
+  readonly explanation: string;
+}
+
+export interface TemporalAnalysisResultDto {
+  readonly caseId: string;
+  readonly status: string;
+  readonly events: readonly TimelineEventDto[];
+  readonly relations: readonly TemporalRelationDto[];
+  readonly contradictions: readonly TemporalContradictionDto[];
+  readonly gaps: readonly TemporalGapDto[];
+  readonly derivations: readonly TemporalDerivationDto[];
+  readonly unresolvedEvents: readonly TimelineEventDto[];
+  readonly generatedAt?: string;
+}
+
+export function toTimelineEventDto(event: TimelineEvent): TimelineEventDto {
+  let temporalExpression: TimelineEventDto["temporalExpression"] = undefined;
+  if (event.temporalExpression) {
+    const range = event.temporalExpression.getUtcRange();
+    const isApproximate =
+      event.temporalExpression instanceof TemporalPoint
+        ? event.temporalExpression.isApproximate ?? false
+        : false;
+
+    temporalExpression = {
+      precision: event.temporalExpression.precision,
+      isApproximate,
+      rawExpression: event.temporalExpression.rawExpression,
+      minUtcIso: isFinite(range.minMs) ? new Date(range.minMs).toISOString() : undefined,
+      maxUtcIso: isFinite(range.maxMs) ? new Date(range.maxMs).toISOString() : undefined,
+    };
+  }
+
+  return {
+    eventId: event.eventId,
+    caseId: event.caseId,
+    eventType: event.eventType,
+    label: event.label,
+    temporalExpression,
+    epistemicStatus: event.epistemicStatus,
+    sourceFactIds: event.sourceFactIds ?? [],
+    sourceTipIds: event.sourceTipIds ?? [],
+    sourceEvidenceIds: event.sourceEvidenceIds ?? [],
+    derived: event.derived ?? false,
+    metadata: event.metadata ?? {},
+  };
+}
+
+export function toTemporalAnalysisResultDto(
+  result: TemporalAnalysisResult
+): TemporalAnalysisResultDto {
+  return {
+    caseId: result.caseId,
+    status: result.status,
+    events: result.events.map(toTimelineEventDto),
+    relations: result.relations.map((r: TemporalRelation) => ({
+      leftEventId: r.leftEventId,
+      rightEventId: r.rightEventId,
+      relation: r.relation,
+      explanation: r.explanation,
+    })),
+    contradictions: result.contradictions.map((c: TemporalContradiction) => ({
+      leftEventId: c.leftEventId,
+      rightEventId: c.rightEventId,
+      severity: c.severity,
+      reasonCode: c.reasonCode,
+      explanation: c.explanation,
+      sourceFactIds: c.sourceFactIds ?? [],
+    })),
+    gaps: result.gaps.map((g: TemporalGap) => ({
+      startEventId: g.startEventId,
+      endEventId: g.endEventId,
+      durationMinutes: g.durationMinutes,
+      durationDays: g.durationDays,
+      classification: g.classification,
+      explanation: g.explanation,
+    })),
+    derivations: result.derivations.map((d: TemporalDerivation) => ({
+      derivationId: d.derivationId,
+      derivedAttribute: d.derivedAttribute,
+      precision: d.precision,
+      epistemicStatus: d.epistemicStatus,
+      sourceFactIds: d.sourceFactIds ?? [],
+      sourceEventIds: d.sourceEventIds ?? [],
+      explanation: d.explanation,
+    })),
+    unresolvedEvents: result.unresolvedEvents.map(toTimelineEventDto),
+    generatedAt: result.generatedAt ? result.generatedAt.toISOString() : undefined,
   };
 }

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { createCaseId, PrivacyLevel } from "@/domain";
 import {
   AUDIT_OUTCOMES,
   AuditAction,
@@ -34,7 +35,7 @@ export async function executeProtectedCommand(
   const actor = resolveActorContext(request);
   const container = getApplicationContainer();
   const requestId = actor.requestId;
-  let targetResourceId = options.resourceId ?? null;
+  let targetResourceId = options.resourceId ?? options.caseId ?? null;
 
   try {
     // 1. Authenticated Check
@@ -56,11 +57,28 @@ export async function executeProtectedCommand(
       throw new UnauthenticatedError();
     }
 
+    // Resolve case privacy level if caseId is provided
+    let casePrivacyLevel: PrivacyLevel | undefined;
+    if (options.caseId) {
+      try {
+        const existingCase = await container.repositories.caseRepository.findById(
+          createCaseId(options.caseId)
+        );
+        if (existingCase) {
+          casePrivacyLevel = existingCase.privacyLevel;
+        }
+      } catch {
+        // Invalid caseId format handled downstream
+      }
+    }
+
     // 2. Authorization Decision
     const decision = authorize({
       actor,
       permission: options.permission,
-      resource: options.caseId ? { caseId: options.caseId } : undefined,
+      resource: options.caseId 
+        ? { caseId: options.caseId, privacyLevel: casePrivacyLevel } 
+        : undefined,
     });
 
     if (!decision.allowed) {

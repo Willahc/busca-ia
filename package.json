@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:infrastructure": "vitest run tests/infrastructure",
     "test:api": "vitest run tests/api",
-    "test:security": "vitest run tests/security"
+    "test:security": "vitest run tests/security",
+    "test:temporal": "vitest run tests/intelligence/temporal"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

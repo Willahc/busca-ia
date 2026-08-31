@@ -67,6 +67,73 @@ describe("Backward Compatibility: Migration 001 -> 002 + 003", () => {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
+
+      CREATE TABLE facts (
+        fact_id TEXT PRIMARY KEY,
+        subject_id TEXT NOT NULL,
+        attribute TEXT NOT NULL,
+        value_json TEXT NOT NULL,
+        epistemic_status TEXT NOT NULL,
+        source_id TEXT NOT NULL REFERENCES sources(source_id),
+        observed_at TEXT,
+        recorded_at TEXT NOT NULL,
+        recorded_by TEXT NOT NULL,
+        confidence REAL,
+        note TEXT
+      );
+
+      CREATE TABLE fact_parents (
+        fact_id TEXT NOT NULL REFERENCES facts(fact_id) ON DELETE CASCADE,
+        parent_fact_id TEXT NOT NULL,
+        PRIMARY KEY (fact_id, parent_fact_id)
+      );
+
+      CREATE TABLE tips (
+        tip_id TEXT PRIMARY KEY,
+        case_id TEXT NOT NULL REFERENCES cases(case_id),
+        source_id TEXT NOT NULL REFERENCES sources(source_id),
+        original_text TEXT NOT NULL,
+        received_at TEXT NOT NULL,
+        epistemic_status TEXT NOT NULL,
+        observed_at TEXT,
+        recorded_at TEXT NOT NULL,
+        recorded_by TEXT NOT NULL,
+        note TEXT
+      );
+
+      CREATE TABLE evidence (
+        evidence_id TEXT PRIMARY KEY,
+        case_id TEXT NOT NULL REFERENCES cases(case_id),
+        source_id TEXT NOT NULL REFERENCES sources(source_id),
+        description TEXT NOT NULL,
+        epistemic_status TEXT NOT NULL,
+        observed_at TEXT,
+        recorded_at TEXT NOT NULL,
+        recorded_by TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE hypotheses (
+        hypothesis_id TEXT PRIMARY KEY,
+        case_id TEXT NOT NULL REFERENCES cases(case_id),
+        statement TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE hypothesis_supporting_evidence (
+        hypothesis_id TEXT NOT NULL REFERENCES hypotheses(hypothesis_id) ON DELETE CASCADE,
+        evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+        PRIMARY KEY (hypothesis_id, evidence_id)
+      );
+
+      CREATE TABLE hypothesis_contradicting_evidence (
+        hypothesis_id TEXT NOT NULL REFERENCES hypotheses(hypothesis_id) ON DELETE CASCADE,
+        evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+        PRIMARY KEY (hypothesis_id, evidence_id)
+      );
     `);
     db.prepare("INSERT INTO schema_migrations VALUES (1, '001-initial-schema', '2026-08-31T00:00:00Z')").run();
 
@@ -81,13 +148,13 @@ describe("Backward Compatibility: Migration 001 -> 002 + 003", () => {
       INSERT INTO cases VALUES ('CASE-LEGACY-001', 'PERSON-LEGACY-001', 'EVENT-LEGACY-001', 'ACTIVE', 'STATUS_TO_VERIFY', '2026-08-31T00:00:00Z', '2026-08-31T00:00:00Z');
     `).run();
 
-    // 2. Run applyMigrations(db) to execute migration 2 and 3
+    // 2. Run applyMigrations(db) to execute subsequent migrations
     applyMigrations(db);
 
-    // 3. Verify schema_migrations now contains all 3 migrations
+    // 3. Verify schema_migrations now contains all 4 migrations
     const migrations = db.prepare("SELECT version, name FROM schema_migrations ORDER BY version ASC").all() as { version: number; name: string }[];
-    expect(migrations).toHaveLength(3);
-    expect(migrations.map((m) => m.version)).toEqual([1, 2, 3]);
+    expect(migrations).toHaveLength(4);
+    expect(migrations.map((m) => m.version)).toEqual([1, 2, 3, 4]);
 
     // 4. Verify existing case record was upgraded with default privacy_level 'RESTRICTED' and all fields preserved
     const caseRepo = new SqliteCaseRepository(db);
