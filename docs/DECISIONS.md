@@ -122,3 +122,51 @@
 - **Contexto:** Hipóteses articulam conexões probatórias e direcionam linhas de investigação, mas não constituem fatos consumados.
 - **Decisão:** Uma `Hypothesis` pode receber suporte (`SUPPORTED`) ou refutação (`WEAKENED`, `REJECTED`), mas não possui mecanismo de conversão direta em `Fact`. A constatação fática exige criação de novos fatos com suas respectivas proveniências.
 - **Consequências:** Preservação estrita da separação epistêmica entre teoria investigativa e evidência comprovada.
+
+---
+
+### ADR-016: Application Layer como Entrada Oficial de Operações
+- **Status:** Aceito
+- **Contexto:** Múltiplos pontos de entrada (UI Next.js, API REST futura, rotinas batch) precisam executar operações no domínio sem duplicação de regras de orquestração.
+- **Decisão:** Todos os fluxos operacionais devem passar obrigatoriamente por casos de uso explicitamente modelados em `src/application/use-cases/`.
+- **Consequências:** Centralização da orquestração e reutilização consistente da lógica de negócio.
+
+---
+
+### ADR-017: Repository Ports Pertencem à Application Layer
+- **Status:** Aceito
+- **Contexto:** O domínio deve ser puro e independente de persistência, enquanto a aplicação precisa definir como carregar e persistir agregados.
+- **Decisão:** As interfaces abstratas de repositório (`*Repository`) residem em `src/application/ports/` (Inversão de Dependência).
+- **Consequências:** O Domínio permanece totalmente agnóstico e a Infraestrutura implementa as portas necessárias.
+
+---
+
+### ADR-018: Persistência Fica Fora do Domain e da Application
+- **Status:** Aceito
+- **Contexto:** Escolhas de banco de dados e ORM devem ser adiadas e isoladas para evitar acoplamento prematuro.
+- **Decisão:** Nenhum código de persistência real (SQL, ORM, filesystem) reside no Domain ou na Application. Adaptadores `InMemory` são usados estritamente em `tests/application/in-memory/`.
+- **Consequências:** Flexibilidade total para selecionar a infraestrutura adequada em gates futuros.
+
+---
+
+### ADR-019: Ports Assíncronos Desde o Início
+- **Status:** Aceito
+- **Contexto:** Repositórios em memória poderiam ser síncronos, mas bancos de dados reais operam via I/O assíncrono.
+- **Decisão:** Todas as portas de repositório retornam `Promise<T | null>` e `Promise<void>` desde o primeiro momento.
+- **Consequências:** Nenhuma refatoração nos Use Cases será necessária ao plugar bancos assíncronos.
+
+---
+
+### ADR-020: Coerência Referencial Orquestrada pela Application
+- **Status:** Aceito
+- **Contexto:** Antes da introdução de foreign keys em bancos de dados, o sistema precisa garantir a integridade entre agregados relacionados (ex: `Case.personId` deve corresponder a `MissingEvent.personId`).
+- **Decisão:** A Camada de Aplicação valida ativamente a coerência referencial cruzada e existência de entidades antes de persistir alterações.
+- **Consequências:** Proteção contra estados órfãos e inconsistências relacionais em tempo de aplicação.
+
+---
+
+### ADR-021: Presentation Não Manipula Entidades de Domain Diretamente
+- **Status:** Aceito
+- **Contexto:** Permitir que controllers ou componentes UI instanciem entidades ou chamem métodos de domínio diretamente viola a separação de camadas e contorna validações de caso de uso.
+- **Decisão:** A camada de apresentação deve exclusivamente chamar Use Cases da Application Layer, recebendo DTOs ou entidades imutáveis como retorno.
+- **Consequências:** Blindagem das regras de orquestração e eliminação de mutações acidentais na interface.
