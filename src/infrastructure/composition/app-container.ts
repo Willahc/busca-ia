@@ -19,8 +19,10 @@ import {
   TipRepository,
   UpdateOfficialStatus,
 } from "@/application";
+import { AuditRepository } from "@/security";
 import {
   createSqliteConnection,
+  SqliteAuditRepository,
   SqliteCaseRepository,
   SqliteConnectionOptions,
   SqliteEvidenceRepository,
@@ -41,6 +43,7 @@ export interface AppRepositories {
   readonly tipRepository: TipRepository;
   readonly evidenceRepository: EvidenceRepository;
   readonly hypothesisRepository: HypothesisRepository;
+  readonly auditRepository: AuditRepository;
 }
 
 export interface AppUseCases {
@@ -75,6 +78,7 @@ export function createAppContainer(options: SqliteConnectionOptions = {}): AppCo
   const tipRepository = new SqliteTipRepository(db);
   const evidenceRepository = new SqliteEvidenceRepository(db);
   const hypothesisRepository = new SqliteHypothesisRepository(db);
+  const auditRepository = new SqliteAuditRepository(db);
 
   const repositories: AppRepositories = {
     sourceRepository,
@@ -85,6 +89,7 @@ export function createAppContainer(options: SqliteConnectionOptions = {}): AppCo
     tipRepository,
     evidenceRepository,
     hypothesisRepository,
+    auditRepository,
   };
 
   const useCases: AppUseCases = {

@@ -5,9 +5,9 @@ import {
   OfficialStatus,
   Provenance,
 } from "@/domain";
-import { getApplicationContainer } from "@/infrastructure";
+import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES, PERMISSIONS } from "@/security";
 import {
-  handleHttpError,
+  executeProtectedCommand,
   jsonSuccess,
   toCaseDto,
   updateOfficialStatusSchema,
@@ -17,32 +17,40 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ caseId: string }> }
 ) {
-  try {
-    const { caseId } = await context.params;
-    const body = await request.json();
-    const validated = updateOfficialStatusSchema.parse(body);
+  const { caseId } = await context.params;
 
-    const provenance = new Provenance({
-      sourceId: createSourceId(validated.provenance.sourceId),
-      observedAt: validated.provenance.observedAt
-        ? new Date(validated.provenance.observedAt)
-        : undefined,
-      recordedAt: validated.provenance.recordedAt
-        ? new Date(validated.provenance.recordedAt)
-        : new Date(),
-      recordedBy: validated.provenance.recordedBy,
-      note: validated.provenance.note,
-    });
+  return executeProtectedCommand(
+    request,
+    {
+      permission: PERMISSIONS.CASE_OFFICIAL_STATUS_UPDATE,
+      action: AUDIT_ACTIONS.CASE_OFFICIAL_STATUS_UPDATE,
+      resourceType: AUDIT_RESOURCE_TYPES.CASE,
+      caseId,
+      resourceId: caseId,
+    },
+    async ({ container }) => {
+      const body = await request.json();
+      const validated = updateOfficialStatusSchema.parse(body);
 
-    const container = getApplicationContainer();
-    const updatedCase = await container.useCases.updateOfficialStatus.execute({
-      caseId: createCaseId(caseId),
-      newOfficialStatus: validated.officialStatus as OfficialStatus,
-      provenance,
-    });
+      const provenance = new Provenance({
+        sourceId: createSourceId(validated.provenance.sourceId),
+        observedAt: validated.provenance.observedAt
+          ? new Date(validated.provenance.observedAt)
+          : undefined,
+        recordedAt: validated.provenance.recordedAt
+          ? new Date(validated.provenance.recordedAt)
+          : new Date(),
+        recordedBy: validated.provenance.recordedBy,
+        note: validated.provenance.note,
+      });
 
-    return jsonSuccess(toCaseDto(updatedCase), 200);
-  } catch (error) {
-    return handleHttpError(error);
-  }
+      const updatedCase = await container.useCases.updateOfficialStatus.execute({
+        caseId: createCaseId(caseId),
+        newOfficialStatus: validated.officialStatus as OfficialStatus,
+        provenance,
+      });
+
+      return jsonSuccess(toCaseDto(updatedCase), 200);
+    }
+  );
 }

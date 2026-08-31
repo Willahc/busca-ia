@@ -1,26 +1,31 @@
 import { NextRequest } from "next/server";
 import { createMissingEventId, createPersonId } from "@/domain";
-import { getApplicationContainer } from "@/infrastructure";
+import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES, PERMISSIONS } from "@/security";
 import {
-  handleHttpError,
+  executeProtectedCommand,
   jsonSuccess,
   registerMissingEventSchema,
   toMissingEventDto,
 } from "@/app/api/_shared";
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validated = registerMissingEventSchema.parse(body);
+  return executeProtectedCommand(
+    request,
+    {
+      permission: PERMISSIONS.MISSING_EVENT_CREATE,
+      action: AUDIT_ACTIONS.MISSING_EVENT_CREATE,
+      resourceType: AUDIT_RESOURCE_TYPES.MISSING_EVENT,
+    },
+    async ({ container }) => {
+      const body = await request.json();
+      const validated = registerMissingEventSchema.parse(body);
 
-    const container = getApplicationContainer();
-    const event = await container.useCases.registerMissingEvent.execute({
-      id: createMissingEventId(validated.missingEventId),
-      personId: createPersonId(validated.personId),
-    });
+      const event = await container.useCases.registerMissingEvent.execute({
+        id: createMissingEventId(validated.missingEventId),
+        personId: createPersonId(validated.personId),
+      });
 
-    return jsonSuccess(toMissingEventDto(event), 201);
-  } catch (error) {
-    return handleHttpError(error);
-  }
+      return jsonSuccess(toMissingEventDto(event), 201);
+    }
+  );
 }

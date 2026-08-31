@@ -1,0 +1,14 @@
+export const AUDIT_RESOURCE_TYPES = {
+  SOURCE: "SOURCE",
+  PERSON: "PERSON",
+  MISSING_EVENT: "MISSING_EVENT",
+  CASE: "CASE",
+  FACT: "FACT",
+  TIP: "TIP",
+  EVIDENCE: "EVIDENCE",
+  HYPOTHESIS: "HYPOTHESIS",
+  SYSTEM: "SYSTEM",
+} as const;
+
+export type AuditResourceType =
+  (typeof AUDIT_RESOURCE_TYPES)[keyof typeof AUDIT_RESOURCE_TYPES];

@@ -6,3 +6,4 @@ export * from "./sqlite-fact-repository";
 export * from "./sqlite-tip-repository";
 export * from "./sqlite-evidence-repository";
 export * from "./sqlite-hypothesis-repository";
+export * from "./sqlite-audit-repository";

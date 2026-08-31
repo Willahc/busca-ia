@@ -1,13 +1,13 @@
 # Fronteira HTTP e Especificação da API v1
 
 > **Documento:** `docs/API.md`  
-> **Versão:** 1.0.0 (Gate 5 — API Boundary + Composition Root)
+> **Versão:** 1.1.0 (Gate 6 — Security Foundation + RBAC + Audit Context)
 
 ---
 
 ## 1. Visão Geral e Princípios Arquiteturais
 
-A API HTTP atua como um **Adaptador de Entrada (Inbound Adapter)** na arquitetura hexagonal da plataforma.
+A API HTTP atua como um **Adaptador de Entrada (Inbound Adapter)** na arquitetura hexagonal da plataforma, agora acoplada a uma camada de autorização e auditoria em profundidade.
 
 ```
        +-------------------------------------------------------+
@@ -17,45 +17,50 @@ A API HTTP atua como um **Adaptador de Entrada (Inbound Adapter)** na arquitetur
                                   v
        +-------------------------------------------------------+
        |        Next.js App Router (src/app/api/)              |
+       |        - Actor Context Resolver (x-actor-*)           |
        |        - Input Validation (Zod)                       |
-       |        - DTO Mapping                                  |
-       |        - HTTP Error Mapping                           |
+       |        - Authorization Policy Engine                  |
+       |        - DTO Mapping & Error Handling                 |
        +-------------------------------------------------------+
-                                  |
-                                  v
-       +-------------------------------------------------------+
-       |        Application Use Cases (src/application)        |
-       +-------------------------------------------------------+
-                                  |
-                                  v
-       +-------------------------------------------------------+
-       |               Domain (src/domain) [PURO]              |
-       +-------------------------------------------------------+
-                                  |
-                                  v
-       +-------------------------------------------------------+
-       |             Ports (src/application/ports)             |
-       +-------------------------------------------------------+
-                                  ^ (implementa portas)
-       +-------------------------------------------------------+
-       |        Infrastructure (src/infrastructure)            |
-       |        - Composition Root (AppContainer)              |
-       |        - SQLite Repositories & Mappers                |
-       +-------------------------------------------------------+
+               | (Authorized)                 | (Audit Record)
+               v                              v
+       +-------------------------------+  +---------------------+
+       |    Application Use Cases      |  |   AuditRepository   |
+       |    (src/application)          |  |  (audit_events tbl) |
+       +-------------------------------+  +---------------------+
+               |                              ^
+               v                              |
+       +-------------------------------+      |
+       |   Domain (src/domain) [PURO]  |      |
+       +-------------------------------+      |
+               |                              |
+               v                              |
+       +--------------------------------------+
+       |   Infrastructure (src/infrastructure)|
+       |   - Composition Root (AppContainer)  |
+       |   - SQLite Repositories & Mappers    |
+       +--------------------------------------+
 ```
 
 ### Regras de Ouro da API:
-1. **Zero Regra de Domínio:** A camada de API apenas valida formato/tipo e orquestra DTOs. Decisões epistêmicas e invariantes residem exclusivamente no Domínio e na Aplicação.
-2. **Composition Root Obrigatória:** Route Handlers **nunca** instanciam repositórios SQLite ou criam conexões de banco de dados diretamente; tudo é resolvido via `getApplicationContainer()`.
-3. **Foco em Comandos:** Neste gate, a API implementa apenas comandos operacionais (`POST`/`PATCH`). Não há endpoints de listagem em massa (`GET /cases`, `GET /persons`) para evitar exposição de dados sensíveis antes da introdução de autenticação e RBAC.
+1. **Zero Regra de Domínio no Boundary:** A camada de API apenas valida formato/tipo e orquestra DTOs e autorizações.
+2. **Deny by Default:** Requisições sem identidade válida geram `401 Unauthorized`. Atores sem permissão para o recurso/caso geram `403 Forbidden`.
+3. **Auditoria Persistente e Minimizada:** Toda operação de negócio autorizada, negada ou falha gera um registro imutável em `audit_events`, sem armazenar conteúdos investigativos confidenciais.
 
 ---
 
-## 2. Aviso de Segurança e Escopo
+## 2. Cabeçalhos de Autenticação e Contexto de Desenvolvimento
 
 > [!WARNING]
-> **API RESTRITA AO AMBIENTE LOCAL DE DESENVOLVIMENTO (DEV/LOCAL)**  
-> Esta versão da API **não possui autenticação nem controle de acesso (RBAC)**. Ela é destinada exclusivamente a testes locais e desenvolvimento sob a premissa de *zero trust*. **NÃO deve ser exposta publicamente ou utilizada em produção sem a camada de segurança (Gate 6).**
+> **RESOLVER DE DESENVOLVIMENTO (DEV/LOCAL)**  
+> Durante esta fase pré-autenticação real, o contexto do ator é recebido via cabeçalhos controlados de desenvolvimento em ambientes de teste e dev:
+> - `x-actor-id`: Identificador opaco do ator (ex: `OFFICER-001`, `ANALYST-001`).
+> - `x-actor-roles`: Papéis do ator separados por vírgula (ex: `LAW_ENFORCEMENT`, `ANALYST`).
+> - `x-actor-case-scopes`: Casos autorizados para papéis com escopo limitado (ex: `CASE-001,CASE-002`).
+> - `x-actor-organization-id`: Identificador da organização de lotação.
+> - `x-request-id`: Identificador de correlação de requisição.
+>
+> **PROTEÇÃO EM PRODUÇÃO:** Em `NODE_ENV === "production"`, estes cabeçalhos são estritamente ignorados, resultando em contexto não autenticado (`401`).
 
 ---
 
@@ -100,18 +105,20 @@ Todas as respostas de erro retornam uma estrutura padronizada e sanitizada:
 | **`200 OK`** | — | Operação de alteração/atualização bem-sucedida (`PATCH`). |
 | **`201 Created`** | — | Recurso criado com sucesso (`POST`). |
 | **`400 Bad Request`** | `VALIDATION_ERROR` / `MALFORMED_JSON` | Payload JSON malformado, campo obrigatório ausente ou formato inválido (Zod). |
+| **`401 Unauthorized`** | `UNAUTHENTICATED` | Requisição sem cabeçalhos de ator ou com credencial inválida. |
+| **`403 Forbidden`** | `FORBIDDEN` | Ator autenticado mas sem permissão, fora do escopo do caso ou violando o nível de privacidade. |
 | **`404 Not Found`** | `NOT_FOUND` | Entidade referenciada não existe (`EntityNotFoundError`). |
 | **`409 Conflict`** | `CONFLICT` | Identificador duplicado (`ConflictError`). |
 | **`422 Unprocessable`** | `UNPROCESSABLE_ENTITY` / `DOMAIN_INVARIANT_VIOLATION` | Violação de integridade referencial cruzada ou invariante epistêmica do Domínio. |
-| **`500 Internal Error`** | `INTERNAL_ERROR` | Erro inesperado. A resposta é 100% sanitizada, sem vazar stack trace, SQL ou caminhos locais. |
+| **`500 Internal Error`** | `INTERNAL_ERROR` | Erro inesperado. 100% sanitizado (sem vazar stack trace, SQL ou caminhos locais). |
 | **`503 Service Unavail`** | `UNREADY` | O banco de dados ou as migrações estão inacessíveis no endpoint de prontidão. |
 
 ---
 
-## 5. Endpoints de Infraestrutura
+## 5. Endpoints de Infraestrutura (Públicos)
 
 ### `GET /api/health`
-- **Finalidade:** Liveness check rápido para verificar se o processo HTTP está respondendo. Não toca no banco de dados.
+- **Finalidade:** Liveness check rápido para verificar se o processo HTTP está respondendo. Não exige autenticação.
 - **Resposta:** `200 OK`
 ```json
 { "status": "ok" }
@@ -130,10 +137,12 @@ Todas as respostas de erro retornam uma estrutura padronizada e sanitizada:
 
 ---
 
-## 6. Endpoints de Comandos (API v1)
+## 6. Endpoints de Comandos (API v1 Protegida)
+
+Todos os comandos abaixo exigem ator autenticado e permissão correspondente:
 
 ### 6.1. `POST /api/v1/sources`
-Registra uma nova fonte formal de informação.
+- **Permissão Exigida:** `SOURCE_CREATE`
 - **Payload:**
 ```json
 {
@@ -145,7 +154,7 @@ Registra uma nova fonte formal de informação.
 ```
 
 ### 6.2. `POST /api/v1/persons`
-Registra uma identidade investigativa (permite perfil inicial incompleto).
+- **Permissão Exigida:** `PERSON_CREATE`
 - **Payload:**
 ```json
 {
@@ -154,7 +163,7 @@ Registra uma identidade investigativa (permite perfil inicial incompleto).
 ```
 
 ### 6.3. `POST /api/v1/missing-events`
-Registra o evento de desaparecimento vinculado a uma `Person` existente.
+- **Permissão Exigida:** `MISSING_EVENT_CREATE`
 - **Payload:**
 ```json
 {
@@ -164,7 +173,7 @@ Registra o evento de desaparecimento vinculado a uma `Person` existente.
 ```
 
 ### 6.4. `POST /api/v1/cases`
-Cria o agregado de Caso investigativo, garantindo coerência referencial entre `Person` e `MissingEvent`.
+- **Permissão Exigida:** `CASE_CREATE`
 - **Payload:**
 ```json
 {
@@ -172,12 +181,13 @@ Cria o agregado de Caso investigativo, garantindo coerência referencial entre `
   "personId": "PERSON-001",
   "missingEventId": "EVENT-001",
   "workflowStatus": "DRAFT",
-  "officialStatus": "STATUS_TO_VERIFY"
+  "officialStatus": "STATUS_TO_VERIFY",
+  "privacyLevel": "RESTRICTED"
 }
 ```
 
 ### 6.5. `POST /api/v1/facts`
-Registra um fato com proveniência completa e rastreabilidade de fatos ancestrais.
+- **Permissão Exigida:** `FACT_CREATE`
 - **Payload:**
 ```json
 {
@@ -196,7 +206,7 @@ Registra um fato com proveniência completa e rastreabilidade de fatos ancestrai
 ```
 
 ### 6.6. `POST /api/v1/tips`
-Registra relato público preservando o texto original (`originalText`) de forma estritamente intacta.
+- **Permissão Exigida:** `TIP_CREATE` (escopado ao `caseId`)
 - **Payload:**
 ```json
 {
@@ -209,7 +219,7 @@ Registra relato público preservando o texto original (`originalText`) de forma 
 ```
 
 ### 6.7. `POST /api/v1/evidence`
-Registra achado probatório sem confirmação automática de hipótese.
+- **Permissão Exigida:** `EVIDENCE_CREATE` (escopado ao `caseId`)
 - **Payload:**
 ```json
 {
@@ -226,7 +236,7 @@ Registra achado probatório sem confirmação automática de hipótese.
 ```
 
 ### 6.8. `POST /api/v1/hypotheses`
-Registra uma hipótese investigativa com referências opcionais a evidências de suporte e refutação.
+- **Permissão Exigida:** `HYPOTHESIS_CREATE` (escopado ao `caseId`)
 - **Payload:**
 ```json
 {
@@ -238,7 +248,7 @@ Registra uma hipótese investigativa com referências opcionais a evidências de
 ```
 
 ### 6.9. `PATCH /api/v1/cases/:caseId/workflow-status`
-Altera exclusivamente o status operacional interno (`DRAFT`, `ACTIVE`, `SUSPENDED`, `CLOSED`), preservando o status oficial.
+- **Permissão Exigida:** `CASE_WORKFLOW_UPDATE` (escopado ao `caseId`)
 - **Payload:**
 ```json
 {
@@ -247,7 +257,7 @@ Altera exclusivamente o status operacional interno (`DRAFT`, `ACTIVE`, `SUSPENDE
 ```
 
 ### 6.10. `PATCH /api/v1/cases/:caseId/official-status`
-Atualiza exclusivamente o status administrativo/oficial perante as autoridades (`OFFICIALLY_MISSING`, `OFFICIALLY_LOCATED`, `STATUS_TO_VERIFY`, `UNKNOWN`), preservando o workflow interno.
+- **Permissão Exigida:** `CASE_OFFICIAL_STATUS_UPDATE` (escopado ao `caseId`)
 - **Payload:**
 ```json
 {
@@ -258,13 +268,3 @@ Atualiza exclusivamente o status administrativo/oficial perante as autoridades (
   }
 }
 ```
-
----
-
-## 7. Limites de Tamanho de Campos
-
-Para prevenir ataques de negação de serviço e payloads desproporcionais, os seguintes limites estritos são impostos:
-- **`originalText`**: Máximo de 10.000 caracteres.
-- **`description` / `statement`**: Máximo de 5.000 caracteres.
-- **`label` / `externalReference` / `note`**: Máximo de 500 a 2.000 caracteres.
-- **`sourceId` / `personId` / `caseId` / etc.**: Máximo de 128 caracteres.

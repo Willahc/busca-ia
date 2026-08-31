@@ -19,14 +19,15 @@ export class SqliteCaseRepository implements CaseRepository {
     const row = CaseMapper.toRow(c);
     const stmt = this.db.prepare(`
       INSERT INTO cases (
-        case_id, person_id, missing_event_id, workflow_status, official_status, created_at, updated_at
+        case_id, person_id, missing_event_id, workflow_status, official_status, privacy_level, created_at, updated_at
       )
       VALUES (
-        @case_id, @person_id, @missing_event_id, @workflow_status, @official_status, @created_at, @updated_at
+        @case_id, @person_id, @missing_event_id, @workflow_status, @official_status, @privacy_level, @created_at, @updated_at
       )
       ON CONFLICT(case_id) DO UPDATE SET
         workflow_status = excluded.workflow_status,
         official_status = excluded.official_status,
+        privacy_level = excluded.privacy_level,
         updated_at = excluded.updated_at
     `);
     stmt.run(row);

@@ -19,6 +19,7 @@ export * from "./missing-event/missing-event";
 
 // Case Aggregate
 export * from "./case/case-status";
+export * from "./case/privacy-level";
 export * from "./case/case";
 
 // Tip

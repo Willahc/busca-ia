@@ -29,7 +29,12 @@ import {
 function createJsonRequest(url: string, method: string, body?: unknown): NextRequest {
   return new NextRequest(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-actor-id": "ACTOR-API-001",
+      "x-actor-roles": "LAW_ENFORCEMENT,CASE_MANAGER,ANALYST",
+      "x-actor-case-scopes": "CASE-API-001",
+    },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   EPISTEMIC_STATUS,
   OFFICIAL_STATUS,
+  PRIVACY_LEVELS,
   SOURCE_TYPES,
   WORKFLOW_STATUS,
 } from "@/domain";
@@ -89,6 +90,18 @@ export const createCaseSchema = z
           OFFICIAL_STATUS.UNKNOWN,
         ],
         { message: "Invalid officialStatus" }
+      )
+      .optional(),
+    privacyLevel: z
+      .enum(
+        [
+          PRIVACY_LEVELS.PUBLIC,
+          PRIVACY_LEVELS.RESTRICTED,
+          PRIVACY_LEVELS.CONFIDENTIAL,
+          PRIVACY_LEVELS.LAW_ENFORCEMENT_ONLY,
+          PRIVACY_LEVELS.SEALED,
+        ],
+        { message: "Invalid privacyLevel" }
       )
       .optional(),
     createdAt: isoDateStringSchema.optional(),

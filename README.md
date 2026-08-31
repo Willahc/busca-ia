@@ -121,23 +121,27 @@ Imagens/                   # Diretório local preexistente (preservado)
 
 ---
 
-## 10. API HTTP Local (Ambiente de Desenvolvimento)
+## 10. API HTTP Local e Fundação de Segurança (Gates 5 e 6)
 
-A partir do Gate 5, a plataforma dispõe de uma fronteira HTTP operacional estruturada no Next.js App Router (`/api/v1/`) acoplada a uma Composition Root centralizada e persistência SQLite local (`data/busca-ia.db`):
+A plataforma dispõe de uma fronteira HTTP operacional estruturada no Next.js App Router (`/api/v1/`), protegida por controle de acesso baseado em papéis e permissões (RBAC), escopos de caso e níveis de privacidade (`PrivacyLevel`), integrada a uma trilha de auditoria persistente (`audit_events`):
 
-- **Health Probe:** `GET /api/health`
-- **Readiness Probe:** `GET /api/readiness`
-- **Comandos Operacionais (v1):**
-  - `POST /api/v1/sources`
-  - `POST /api/v1/persons`
-  - `POST /api/v1/missing-events`
-  - `POST /api/v1/cases`
-  - `POST /api/v1/facts`
-  - `POST /api/v1/tips`
-  - `POST /api/v1/evidence`
-  - `POST /api/v1/hypotheses`
-  - `PATCH /api/v1/cases/:caseId/workflow-status`
-  - `PATCH /api/v1/cases/:caseId/official-status`
+- **Health Probe (Pública):** `GET /api/health`
+- **Readiness Probe (Operacional):** `GET /api/readiness`
+- **Comandos Protegidos (v1 com RBAC e Auditoria):**
+  - `POST /api/v1/sources` (`SOURCE_CREATE`)
+  - `POST /api/v1/persons` (`PERSON_CREATE`)
+  - `POST /api/v1/missing-events` (`MISSING_EVENT_CREATE`)
+  - `POST /api/v1/cases` (`CASE_CREATE`)
+  - `POST /api/v1/facts` (`FACT_CREATE`)
+  - `POST /api/v1/tips` (`TIP_CREATE`, escopado ao caso)
+  - `POST /api/v1/evidence` (`EVIDENCE_CREATE`, escopado ao caso)
+  - `POST /api/v1/hypotheses` (`HYPOTHESIS_CREATE`, escopado ao caso)
+  - `PATCH /api/v1/cases/:caseId/workflow-status` (`CASE_WORKFLOW_UPDATE`, escopado ao caso)
+  - `PATCH /api/v1/cases/:caseId/official-status` (`CASE_OFFICIAL_STATUS_UPDATE`, escopado ao caso)
 
-> **Nota:** A API atual é restrita a testes e desenvolvimento local e não possui autenticação nem endpoints de busca/listagem pública. Para documentação completa de endpoints e contratos, consulte [`docs/API.md`](docs/API.md).
+### Documentação Técnica de Referência:
+- [`docs/SECURITY.md`](docs/SECURITY.md) — Modelo de ameaças, papéis, permissões, níveis de privacidade e deny-by-default.
+- [`docs/AUDIT.md`](docs/AUDIT.md) — Trilha de auditoria persistente e princípio de minimização de dados.
+- [`docs/API.md`](docs/API.md) — Especificação completa de contratos de endpoints, esquemas Zod e envelopes DTO.
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — 47 Registros de Decisões de Arquitetura (ADR-001 a ADR-047).
 

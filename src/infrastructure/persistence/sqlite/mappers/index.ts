@@ -6,3 +6,4 @@ export * from "./fact-mapper";
 export * from "./tip-mapper";
 export * from "./evidence-mapper";
 export * from "./hypothesis-mapper";
+export * from "./audit-mapper";

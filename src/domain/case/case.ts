@@ -5,6 +5,7 @@ import {
   WorkflowStatus,
   WORKFLOW_STATUS,
 } from "./case-status";
+import { PrivacyLevel, PRIVACY_LEVELS } from "./privacy-level";
 import { Provenance } from "../shared/provenance";
 import { EntityValidationError, MissingProvenanceError } from "../shared/domain-errors";
 
@@ -14,6 +15,7 @@ export interface CaseProps {
   readonly missingEventId: MissingEventId;
   readonly workflowStatus?: WorkflowStatus;
   readonly officialStatus?: OfficialStatus;
+  readonly privacyLevel?: PrivacyLevel;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
@@ -21,8 +23,8 @@ export interface CaseProps {
 /**
  * Immutable Root Aggregate representing an investigative case.
  *
- * Enforces clear separation between internal analytical workflow status
- * and external official administrative status.
+ * Enforces clear separation between internal analytical workflow status,
+ * external official administrative status, and privacy access level.
  */
 export class Case {
   readonly id: CaseId;
@@ -30,6 +32,7 @@ export class Case {
   readonly missingEventId: MissingEventId;
   readonly workflowStatus: WorkflowStatus;
   readonly officialStatus: OfficialStatus;
+  readonly privacyLevel: PrivacyLevel;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
@@ -54,11 +57,17 @@ export class Case {
       throw new EntityValidationError(`Invalid OfficialStatus: '${officialStatus}'.`);
     }
 
+    const privacyLevel = props.privacyLevel ?? PRIVACY_LEVELS.RESTRICTED;
+    if (!Object.values(PRIVACY_LEVELS).includes(privacyLevel)) {
+      throw new EntityValidationError(`Invalid PrivacyLevel: '${privacyLevel}'.`);
+    }
+
     this.id = props.id;
     this.personId = props.personId;
     this.missingEventId = props.missingEventId;
     this.workflowStatus = workflowStatus;
     this.officialStatus = officialStatus;
+    this.privacyLevel = privacyLevel;
     this.createdAt = props.createdAt ? new Date(props.createdAt.getTime()) : new Date();
     this.updatedAt = props.updatedAt ? new Date(props.updatedAt.getTime()) : new Date(this.createdAt.getTime());
 
@@ -76,6 +85,7 @@ export class Case {
       missingEventId: this.missingEventId,
       workflowStatus: newStatus,
       officialStatus: this.officialStatus,
+      privacyLevel: this.privacyLevel,
       createdAt: this.createdAt,
       updatedAt: new Date(),
     });
@@ -95,6 +105,24 @@ export class Case {
       missingEventId: this.missingEventId,
       workflowStatus: this.workflowStatus,
       officialStatus: newStatus,
+      privacyLevel: this.privacyLevel,
+      createdAt: this.createdAt,
+      updatedAt: new Date(),
+    });
+  }
+
+  updatePrivacyLevel(newLevel: PrivacyLevel): Case {
+    if (!Object.values(PRIVACY_LEVELS).includes(newLevel)) {
+      throw new EntityValidationError(`Invalid PrivacyLevel: '${newLevel}'.`);
+    }
+
+    return new Case({
+      id: this.id,
+      personId: this.personId,
+      missingEventId: this.missingEventId,
+      workflowStatus: this.workflowStatus,
+      officialStatus: this.officialStatus,
+      privacyLevel: newLevel,
       createdAt: this.createdAt,
       updatedAt: new Date(),
     });
