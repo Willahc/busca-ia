@@ -82,3 +82,43 @@
 - **Contexto:** A orquestração dos fluxos analíticos e de negócio deve ter um local explícito e padronizado, evitando dispersão em pastas genéricas de "módulos" ou controllers de apresentação.
 - **Decisão:** Utilizar `src/application/` como a camada dedicada à orquestração dos casos de uso, interfaces de portas (ports) e fluxos investigativos.
 - **Consequências:** Clareza arquitetural e facilidade na substituição de adaptadores externos.
+
+---
+
+### ADR-011: Modelo de Conhecimento Baseado em Fact + Provenance
+- **Status:** Aceito
+- **Contexto:** Entidades investigativas possuem informações com diferentes graus de certeza, fontes e temporalidades. Representar entidades apenas como registros planos perde o contexto forense.
+- **Decisão:** Adotar `Fact` como a unidade atômica de conhecimento vinculada a um sujeito, sempre acompanhada de seu `Provenance` com `sourceId`, `recordedAt`, `observedAt` e `recordedBy`.
+- **Consequências:** Capacidade de versionar atributos individuais, rastrear fontes heterogêneas e auditar origens sem corromper o estado global da entidade.
+
+---
+
+### ADR-012: Estados Epistêmicos Não São Promovidos por Score
+- **Status:** Aceito
+- **Contexto:** O aumento de um score de similaridade descritiva ou probabilidade algorítmica não converte uma inferência em realidade fática.
+- **Decisão:** O estado epistêmico `HYPOTHESIS` ou `UNVERIFIED` não pode ser promovido para `CONFIRMED` com base em métricas de confidence ou score. A confirmação exige evento formal de validação por fonte qualificada.
+- **Consequências:** Proteção absoluta contra alucinações automatizadas e falsos positivos irreversíveis.
+
+---
+
+### ADR-013: Ausência de Informação é Semanticamente Neutra
+- **Status:** Aceito
+- **Contexto:** Casos de desaparecimento frequentemente possuem descrições incompletas. Interpretar campos ausentes como incompatibilidade gera descartes indevidos de pistas válidas.
+- **Decisão:** A ausência de um atributo (`undefined`/`null`) significa estritamente "desconhecido" e possui valor neutro, não constituindo contradição suave ou rígida.
+- **Consequências:** Tolerância a registros parciais e prevenção de falsos descartes em cruzamentos descritivos.
+
+---
+
+### ADR-014: Workflow Interno Separado de Status Oficial
+- **Status:** Aceito
+- **Contexto:** O andamento analítico de um caso no sistema não se confunde com a situação administrativa/jurídica do desaparecido perante as autoridades.
+- **Decisão:** Segregar estritamente o `WorkflowStatus` interno (`DRAFT`, `ACTIVE`, `SUSPENDED`, `CLOSED`) do `OfficialStatus` externo (`OFFICIALLY_MISSING`, `OFFICIALLY_LOCATED`, `STATUS_TO_VERIFY`, `UNKNOWN`).
+- **Consequências:** Clareza operacional sem usurpar competências legais de órgãos públicos oficiais.
+
+---
+
+### ADR-015: Hypothesis Nunca é Equivalente a Fact
+- **Status:** Aceito
+- **Contexto:** Hipóteses articulam conexões probatórias e direcionam linhas de investigação, mas não constituem fatos consumados.
+- **Decisão:** Uma `Hypothesis` pode receber suporte (`SUPPORTED`) ou refutação (`WEAKENED`, `REJECTED`), mas não possui mecanismo de conversão direta em `Fact`. A constatação fática exige criação de novos fatos com suas respectivas proveniências.
+- **Consequências:** Preservação estrita da separação epistêmica entre teoria investigativa e evidência comprovada.

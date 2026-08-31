@@ -1,7 +1,7 @@
 # Arquitetura do Sistema
 
 > **Documento:** `docs/ARCHITECTURE.md`  
-> **Versão:** 1.0.0 (Gate 1 — Fundação Técnica)
+> **Versão:** 1.1.0 (Gate 2 — Modelo Canônico de Domínio)
 
 ---
 
@@ -117,3 +117,9 @@ O cálculo investigativo é estruturado em múltiplas dimensões analíticas exp
 5. **`contradictions` (Contradições Suaves):** Registra divergências que podem ser explicadas por imprecisão de relato, iluminação ou estimativa.
 6. **`hard_contradictions` (Contradições Rígidas):** Fatos excludentes irreconciliáveis (ex: registro oficial de nascimento em data incompatível, presença comprovada em local fisicamente inalcançável). Uma contradição rígida anula a hipótese de identidade, independentemente de coincidências secundárias.
 7. **`information_gain` (Ganho de Informação):** Quantifica o quanto uma nova pista ou evidência reduz a incerteza global do caso.
+
+---
+
+## 6. Modelo Canônico de Domínio Implementado
+
+Para o detalhamento das entidades (`Case`, `Person`, `MissingEvent`, `Fact`, `Source`, `Provenance`, `Tip`, `Evidence`, `Hypothesis`), regras de transição e diagramas conceituais completos, consulte [`docs/DOMAIN_MODEL.md`](DOMAIN_MODEL.md).
