@@ -3,6 +3,7 @@ import {
   Case,
   createCaseId,
   createEvidenceId,
+  createHypothesisId,
   createMissingEventId,
   createPersonId,
   createSourceId,
@@ -66,5 +67,35 @@ describe("Temporal Intelligence: Semantics & Provenance Distinction", () => {
     expect(evEvent).toBeDefined();
     expect(evEvent?.label).toBe("Evidence recorded");
     expect(evEvent?.metadata.timestampType).toBe("custody_recording_time");
+  });
+
+  it("treats Hypothesis.createdAt only as formulation time", () => {
+    const hypothesis = new Hypothesis({
+      id: createHypothesisId("HYP-SEM-001"),
+      caseId,
+      statement: "Synthetic investigative hypothesis",
+      createdAt: new Date("2026-08-31T15:00:00Z"),
+    });
+    const caseEntity = new Case({ id: caseId, personId, missingEventId });
+
+    const timeline = TimelineBuilder.build({ caseEntity, hypotheses: [hypothesis] });
+    const event = timeline.events[0];
+
+    expect(event.eventType).toBe("HYPOTHESIS_CREATED");
+    expect(event.label).toBe("Hypothesis formulated");
+    expect(event.metadata.attribute).toBeUndefined();
+  });
+
+  it("does not turn Case.createdAt into a disappearance event", () => {
+    const caseEntity = new Case({
+      id: caseId,
+      personId,
+      missingEventId,
+      createdAt: new Date("2026-08-31T16:00:00Z"),
+    });
+
+    const timeline = TimelineBuilder.build({ caseEntity });
+
+    expect(timeline.events).toHaveLength(0);
   });
 });

@@ -175,4 +175,51 @@ describe("API Boundary: Protected POST /api/v1/cases/[caseId]/timeline/analyze",
 
     expect(res.status).toBe(403);
   });
+
+  it("writes SUCCEEDED audit for an authorized analysis", async () => {
+    await setupBaseCase();
+    const requestId = "REQ-SUCCEEDED-TL";
+    const req = createSecuredRequest(
+      "http://localhost/api/v1/cases/CASE-TL-001/timeline/analyze",
+      "POST",
+      {},
+      {
+        ...leHeaders,
+        "x-actor-case-scopes": "CASE-TL-001",
+        "x-request-id": requestId,
+      }
+    );
+
+    const res = await postTimelineAnalyze(req, {
+      params: Promise.resolve({ caseId: "CASE-TL-001" }),
+    });
+    const audits = await globalThis.__buscaIaAppContainer!.repositories.auditRepository.findByRequestId(requestId);
+
+    expect(res.status).toBe(200);
+    expect(audits).toHaveLength(1);
+    expect(audits[0].outcome).toBe(AUDIT_OUTCOMES.SUCCEEDED);
+  });
+
+  it("writes FAILED audit when an authorized analysis fails", async () => {
+    const requestId = "REQ-FAILED-TL";
+    const req = createSecuredRequest(
+      "http://localhost/api/v1/cases/CASE-NOT-FOUND/timeline/analyze",
+      "POST",
+      {},
+      {
+        ...leHeaders,
+        "x-actor-case-scopes": "CASE-NOT-FOUND",
+        "x-request-id": requestId,
+      }
+    );
+
+    const res = await postTimelineAnalyze(req, {
+      params: Promise.resolve({ caseId: "CASE-NOT-FOUND" }),
+    });
+    const audits = await globalThis.__buscaIaAppContainer!.repositories.auditRepository.findByRequestId(requestId);
+
+    expect(res.status).toBe(404);
+    expect(audits).toHaveLength(1);
+    expect(audits[0].outcome).toBe(AUDIT_OUTCOMES.FAILED);
+  });
 });

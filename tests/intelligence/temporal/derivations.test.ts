@@ -45,4 +45,43 @@ describe("Temporal Intelligence: Derivations", () => {
     expect(d.sourceFactIds).toHaveLength(2);
     expect(d.sourceEventIds).toEqual(["EV-START", "EV-END"]);
   });
+
+  it.each([
+    ["2026-08-31T12:00:00Z", "2026-08-31T14:00:00Z", "EXACT"],
+    ["2026-08-30", "2026-08-31", "DAY"],
+  ] as const)(
+    "derives an interval without exceeding source precision (%s to %s)",
+    (start, end, expectedPrecision) => {
+      const aggregateId = `AGG-${expectedPrecision}`;
+      const evStart = new TimelineEvent({
+        eventId: `EV-${expectedPrecision}-START`,
+        caseId,
+        eventType: "FACT_OBSERVATION",
+        label: "Start",
+        temporalExpression: TemporalParser.parse(start) ?? undefined,
+        epistemicStatus: "DERIVED",
+        sourceFactIds: [createFactId(`FACT-${expectedPrecision}-START`)],
+        metadata: { attribute: "event.start", aggregateId },
+      });
+      const evEnd = new TimelineEvent({
+        eventId: `EV-${expectedPrecision}-END`,
+        caseId,
+        eventType: "FACT_OBSERVATION",
+        label: "End",
+        temporalExpression: TemporalParser.parse(end) ?? undefined,
+        epistemicStatus: "DERIVED",
+        sourceFactIds: [createFactId(`FACT-${expectedPrecision}-END`)],
+        metadata: { attribute: "event.end", aggregateId },
+      });
+
+      const [derivation] = TemporalDerivationEngine.derive([evStart, evEnd]);
+      expect(derivation.precision).toBe(expectedPrecision);
+      expect(derivation.epistemicStatus).toBe("DERIVED");
+      expect(derivation.sourceEventIds).toEqual([evStart.eventId, evEnd.eventId]);
+      expect(derivation.sourceFactIds).toEqual([
+        ...evStart.sourceFactIds,
+        ...evEnd.sourceFactIds,
+      ]);
+    }
+  );
 });

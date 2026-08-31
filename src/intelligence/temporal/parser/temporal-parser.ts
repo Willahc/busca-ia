@@ -173,11 +173,20 @@ export class TemporalParser {
       const year = parseInt(dtNoTzMatch[1], 10);
       const month = parseInt(dtNoTzMatch[2], 10);
       const day = parseInt(dtNoTzMatch[3], 10);
+      const hour = parseInt(dtNoTzMatch[4], 10);
+      const minute = parseInt(dtNoTzMatch[5], 10);
+      const second = parseInt(dtNoTzMatch[6], 10);
       if (
         month >= 1 &&
         month <= 12 &&
         day >= 1 &&
-        day <= getDaysInMonth(year, month)
+        day <= getDaysInMonth(year, month) &&
+        hour >= 0 &&
+        hour <= 23 &&
+        minute >= 0 &&
+        minute <= 59 &&
+        second >= 0 &&
+        second <= 59
       ) {
         return new TemporalPoint({
           year,

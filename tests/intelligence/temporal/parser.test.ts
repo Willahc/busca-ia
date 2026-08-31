@@ -69,6 +69,10 @@ describe("Temporal Intelligence: Parser", () => {
     expect(interval.precision).toBe("INTERVAL");
   });
 
+  it("rejects a timezone-less datetime with an invalid clock time", () => {
+    expect(TemporalParser.parse("2026-08-31T99:99:99")).toBeNull();
+  });
+
   it("8. should parse JavaScript Date object as EXACT precision", () => {
     const d = new Date("2026-08-31T12:00:00.000Z");
     const pt = TemporalParser.parse(d) as TemporalPoint;
