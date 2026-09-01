@@ -13,7 +13,8 @@
     "test:infrastructure": "vitest run tests/infrastructure",
     "test:api": "vitest run tests/api",
     "test:security": "vitest run tests/security",
-    "test:temporal": "vitest run tests/intelligence/temporal"
+    "test:temporal": "vitest run tests/intelligence/temporal",
+    "test:scoring": "vitest run tests/intelligence/scoring"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

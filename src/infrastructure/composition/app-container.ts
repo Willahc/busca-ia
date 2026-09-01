@@ -20,6 +20,7 @@ import {
   UpdateOfficialStatus,
   AnalyzeCaseTimeline,
   ComparePersonCandidates,
+  AssessPersonCandidateEvidence,
 } from "@/application";
 import { AuditRepository } from "@/security";
 import {
@@ -61,6 +62,7 @@ export interface AppUseCases {
   readonly updateOfficialStatus: UpdateOfficialStatus;
   readonly analyzeCaseTimeline: AnalyzeCaseTimeline;
   readonly comparePersonCandidates: ComparePersonCandidates;
+  readonly assessPersonCandidateEvidence: AssessPersonCandidateEvidence;
 }
 
 export interface AppContainer {
@@ -96,6 +98,12 @@ export function createAppContainer(options: SqliteConnectionOptions = {}): AppCo
     auditRepository,
   };
 
+  const comparePersonCandidates = new ComparePersonCandidates(
+    caseRepository,
+    personRepository,
+    factRepository
+  );
+
   const useCases: AppUseCases = {
     registerSource: new RegisterSource(sourceRepository),
     registerPerson: new RegisterPerson(personRepository),
@@ -115,10 +123,13 @@ export function createAppContainer(options: SqliteConnectionOptions = {}): AppCo
       evidenceRepository,
       hypothesisRepository
     ),
-    comparePersonCandidates: new ComparePersonCandidates(
-      caseRepository,
-      personRepository,
-      factRepository
+    comparePersonCandidates,
+    // Gate 7 analysis is case-wide today; no pair-specific temporal provider is wired here.
+    assessPersonCandidateEvidence: new AssessPersonCandidateEvidence(
+      comparePersonCandidates,
+      factRepository,
+      sourceRepository,
+      evidenceRepository
     ),
   };
 
