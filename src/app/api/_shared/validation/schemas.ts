@@ -243,3 +243,5 @@ export const comparePersonCandidatesSchema = z
     rightPersonId: idSchema("rightPersonId"),
   })
   .strict();
+
+export const assessPersonCandidateEvidenceSchema = comparePersonCandidatesSchema;

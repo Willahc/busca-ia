@@ -17,6 +17,8 @@ import {
   TemporalRelation,
   TimelineEvent,
   AttributeComparison,
+  EvidenceSignal,
+  InvestigativeAssessment,
 } from "@/intelligence";
 import type { ComparePersonCandidatesResult } from "@/application";
 
@@ -417,5 +419,88 @@ export function toEntityResolutionResultDto(
       attribute: issue.attribute,
       sourceFactIds: issue.sourceFactIds,
     })),
+  };
+}
+
+export interface EvidenceSignalDto {
+  readonly signalId: string;
+  readonly type: string;
+  readonly subject: {
+    readonly leftPersonId: string;
+    readonly rightPersonId: string;
+  };
+  readonly attribute: string;
+  readonly outcome: string;
+  readonly compatibility: string;
+  readonly epistemicStatus: string;
+  readonly sourceIds: readonly string[];
+  readonly factIds: readonly string[];
+  readonly evidenceIds: readonly string[];
+  readonly strengthCategory: string;
+  readonly discriminativePower: string;
+  readonly sourceTrust: readonly { readonly sourceId: string; readonly category: string }[];
+  readonly corroboration: string;
+  readonly contradiction: string;
+  readonly informationGain: string;
+  readonly notes: readonly string[];
+}
+
+function toEvidenceSignalDto(signal: EvidenceSignal): EvidenceSignalDto {
+  return {
+    signalId: signal.signalId,
+    type: signal.type,
+    subject: signal.subject,
+    attribute: signal.attribute,
+    outcome: signal.outcome,
+    compatibility: signal.compatibility,
+    epistemicStatus: signal.epistemicStatus,
+    sourceIds: signal.sourceIds,
+    factIds: signal.factIds,
+    evidenceIds: signal.evidenceIds,
+    strengthCategory: signal.strengthCategory,
+    discriminativePower: signal.discriminativePower,
+    sourceTrust: signal.sourceTrust,
+    corroboration: signal.corroboration,
+    contradiction: signal.contradiction,
+    informationGain: signal.informationGain,
+    notes: signal.notes,
+  };
+}
+
+export interface InvestigativeAssessmentDto {
+  readonly caseId: string;
+  readonly subjectPair: { readonly leftPersonId: string; readonly rightPersonId: string };
+  readonly signals: readonly EvidenceSignalDto[];
+  readonly highValueSignals: readonly EvidenceSignalDto[];
+  readonly hardContradictions: readonly EvidenceSignalDto[];
+  readonly softContradictions: readonly EvidenceSignalDto[];
+  readonly corroborationSummary: string;
+  readonly dataSufficiency: string;
+  readonly conclusion: string;
+  readonly explanations: readonly { readonly reasonCode: string; readonly message: string }[];
+  readonly issues: readonly {
+    readonly code: string;
+    readonly attribute?: string;
+    readonly signalIds: readonly string[];
+    readonly factIds: readonly string[];
+  }[];
+}
+
+/** Privacy-minimized DTO: values, Tip text, Evidence descriptions and document data are absent. */
+export function toInvestigativeAssessmentDto(
+  assessment: InvestigativeAssessment
+): InvestigativeAssessmentDto {
+  return {
+    caseId: assessment.caseId,
+    subjectPair: assessment.subjectPair,
+    signals: assessment.signals.map(toEvidenceSignalDto),
+    highValueSignals: assessment.highValueSignals.map(toEvidenceSignalDto),
+    hardContradictions: assessment.hardContradictions.map(toEvidenceSignalDto),
+    softContradictions: assessment.softContradictions.map(toEvidenceSignalDto),
+    corroborationSummary: assessment.corroborationSummary,
+    dataSufficiency: assessment.dataSufficiency,
+    conclusion: assessment.conclusion,
+    explanations: assessment.explanations,
+    issues: assessment.issues,
   };
 }
