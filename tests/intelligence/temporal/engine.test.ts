@@ -68,4 +68,27 @@ describe("Temporal Intelligence: Engine & Insufficient Data Handling", () => {
     expect(res1.relations[0]?.relation).toBe(res2.relations[0]?.relation);
     expect(res1.gaps.length).toBe(res2.gaps.length);
   });
+
+  it("recognizes last_seen_date as a legacy alias for the last-seen timeline fact", () => {
+    const caseEntity = new Case({ id: caseId, personId, missingEventId });
+    const fact = new Fact({
+      id: createFactId("FACT-LEGACY-LAST-SEEN"),
+      subjectId: personId,
+      attribute: "last_seen_date",
+      value: "2026-08-29",
+      epistemicStatus: "SYNTHETIC",
+      provenance: new Provenance({
+        sourceId,
+        recordedAt: new Date("2026-08-29T18:00:00Z"),
+        recordedBy: "SYNTHETIC-TEST",
+      }),
+    });
+
+    const result = TemporalIntelligenceEngine.analyze({
+      caseEntity,
+      facts: [fact],
+    });
+
+    expect(result.events.some((event) => event.label === "Temporal fact: last_seen.at")).toBe(true);
+  });
 });

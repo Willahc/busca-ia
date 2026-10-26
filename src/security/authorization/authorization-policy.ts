@@ -67,7 +67,10 @@ export function authorize(request: AuthorizationRequest): AuthorizationDecision 
     } else {
       // If actor belongs only to scope-constrained roles and has no caseScopes defined:
       const hasInstitutionalBreadth = actor.roles.some(
-        (r) => r === ROLES.LAW_ENFORCEMENT || r === ROLES.CASE_MANAGER
+        (r) =>
+          r === ROLES.LAW_ENFORCEMENT ||
+          r === ROLES.CASE_MANAGER ||
+          r === ROLES.CASE_ADMIN
       );
 
       if (!hasInstitutionalBreadth) {

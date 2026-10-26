@@ -16,6 +16,7 @@ const KNOWN_TEMPORAL_ALIASES: Record<string, TemporalFactAttribute> = {
   "missing.date": "missing.at",
   "last_seen.at": "last_seen.at",
   "last_seen_at": "last_seen.at",
+  "last_seen_date": "last_seen.at",
   "last_seen": "last_seen.at",
   "observed.at": "observed.at",
   "observed_at": "observed.at",

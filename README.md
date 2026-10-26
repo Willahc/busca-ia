@@ -1,6 +1,6 @@
 # Plataforma de Inteligência para Pessoas Desaparecidas
 
-> **Status:** Fundação Técnica (Gate 1) — Ambiente Local em Construção.
+> **Status:** MVP local demonstrativo — fluxo de casos e relatos sintéticos.
 
 ---
 
@@ -127,6 +127,7 @@ A plataforma dispõe de uma fronteira HTTP operacional estruturada no Next.js Ap
 
 - **Health Probe (Pública):** `GET /api/health`
 - **Readiness Probe (Operacional):** `GET /api/readiness`
+- **Consultas locais (somente CASE_ADMIN e registros sintéticos):** `GET /api/v1/cases`, `GET /api/v1/cases/:caseId`
 - **Comandos Protegidos (v1 com RBAC e Auditoria):**
   - `POST /api/v1/sources` (`SOURCE_CREATE`)
   - `POST /api/v1/persons` (`PERSON_CREATE`)
@@ -147,3 +148,20 @@ A plataforma dispõe de uma fronteira HTTP operacional estruturada no Next.js Ap
 - [`docs/API.md`](docs/API.md) — Especificação completa de contratos de endpoints, esquemas Zod e envelopes DTO.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — 56 Registros de Decisões de Arquitetura (ADR-001 a ADR-056).
 
+## 11. Executar o MVP local
+
+```bash
+npm install
+npm run dev
+```
+
+Acesse `http://localhost:3000`. A interface permite criar casos e relatos
+demonstrativos, pesquisar os registros e consultar os dados associados. Use
+somente dados fictícios: o formulário marca fatos e fontes como sintéticos,
+mas este protótipo local ainda não implementa autenticação institucional e não
+deve receber dados de pessoas reais.
+
+O perfil operacional inicial é `CASE_ADMIN`. Ele é distinto de `SYSTEM_ADMIN`,
+que permanece sem permissão investigativa. Os cabeçalhos de ator aceitos pelo
+ambiente de desenvolvimento são apenas um mecanismo local de teste, não uma
+forma de autenticação adequada para implantação ou uso real.

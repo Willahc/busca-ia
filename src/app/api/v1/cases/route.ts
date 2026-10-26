@@ -3,6 +3,7 @@ import {
   createCaseId,
   createMissingEventId,
   createPersonId,
+  createSourceId,
   OfficialStatus,
   PrivacyLevel,
   WorkflowStatus,
@@ -14,6 +15,57 @@ import {
   jsonSuccess,
   toCaseDto,
 } from "@/app/api/_shared";
+
+export async function GET(request: NextRequest) {
+  return executeProtectedCommand(
+    request,
+    {
+      permission: PERMISSIONS.CASE_ADMIN_ACCESS,
+      action: AUDIT_ACTIONS.CASE_LIST,
+      resourceType: AUDIT_RESOURCE_TYPES.CASE,
+    },
+    async ({ container }) => {
+      const cases = await container.repositories.caseRepository.findAll();
+      const data = [];
+      for (const caseEntity of cases) {
+        if (
+          caseEntity.privacyLevel === "SEALED" ||
+          !caseEntity.id.startsWith("SIM-") ||
+          !caseEntity.personId.startsWith("SIM-") ||
+          !caseEntity.missingEventId.startsWith("SIM-")
+        ) {
+          continue;
+        }
+
+        const facts = await container.repositories.factRepository.findBySubjectId(
+          caseEntity.personId
+        );
+        const nameFact = facts.find(
+          (fact) =>
+            fact.attribute === "display_name" &&
+            fact.epistemicStatus === "SYNTHETIC" &&
+            typeof fact.value === "string"
+        );
+        if (!nameFact) {
+          continue;
+        }
+
+        const source = await container.repositories.sourceRepository.findById(
+          createSourceId(nameFact.provenance.sourceId)
+        );
+        if (!source?.isSynthetic) {
+          continue;
+        }
+
+        data.push({
+          ...toCaseDto(caseEntity),
+          displayName: String(nameFact.value),
+        });
+      }
+      return jsonSuccess(data);
+    }
+  );
+}
 
 export async function POST(request: NextRequest) {
   return executeProtectedCommand(

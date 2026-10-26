@@ -15,6 +15,13 @@ export class SqliteCaseRepository implements CaseRepository {
     return CaseMapper.toDomain(row);
   }
 
+  async findAll(): Promise<readonly Case[]> {
+    const rows = this.db
+      .prepare("SELECT * FROM cases ORDER BY updated_at DESC, case_id ASC")
+      .all() as CaseRow[];
+    return rows.map((row) => CaseMapper.toDomain(row));
+  }
+
   async save(c: Case): Promise<void> {
     const row = CaseMapper.toRow(c);
     const stmt = this.db.prepare(`

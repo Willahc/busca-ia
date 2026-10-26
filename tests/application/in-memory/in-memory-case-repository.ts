@@ -8,6 +8,10 @@ export class InMemoryCaseRepository implements CaseRepository {
     return this.items.get(id) ?? null;
   }
 
+  async findAll(): Promise<readonly Case[]> {
+    return [...this.items.values()];
+  }
+
   async save(c: Case): Promise<void> {
     this.items.set(c.id, c);
   }

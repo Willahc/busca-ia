@@ -73,31 +73,33 @@ export interface ActorContext {
 - **`SOCIAL_ASSISTANCE`**: Assistente social em abrigos e centros de acolhimento.
 - **`LAW_ENFORCEMENT`**: Autoridade policial e agentes de segurança pública.
 - **`CASE_MANAGER`**: Gestor operacional de casos e coordenação investigativa.
+- **`CASE_ADMIN`**: Administrador operacional do MVP local, com acesso a casos sintéticos. Exige autenticação institucional antes de qualquer implantação; não é o administrador técnico.
 - **`SYSTEM_ADMIN`**: Administrador estritamente técnico de infraestrutura.
 
 ### 4.2. Matriz de Permissões Explícitas
 
-| Permissão | PUBLIC | FAMILY | ANALYST | NGO / HEALTH / SOCIAL | LAW_ENFORCEMENT | CASE_MANAGER | SYSTEM_ADMIN |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `SOURCE_CREATE` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| `PERSON_CREATE` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| `MISSING_EVENT_CREATE`| ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| `CASE_CREATE` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| `FACT_CREATE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `TIP_CREATE` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `EVIDENCE_CREATE` | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `HYPOTHESIS_CREATE`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `CASE_WORKFLOW_UPDATE`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `CASE_OFFICIAL_STATUS_UPDATE`| ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| `CASE_VIEW_PUBLIC` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `CASE_VIEW_RESTRICTED`| ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `CASE_VIEW_CONFIDENTIAL`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `CASE_VIEW_LAW_ENFORCEMENT`| ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| `CASE_VIEW_SEALED` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| `TIMELINE_ANALYZE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `ENTITY_RESOLUTION_COMPARE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `AUDIT_VIEW` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| `SYSTEM_ADMINISTRATION`| ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Permissão | PUBLIC | FAMILY | ANALYST | NGO / HEALTH / SOCIAL | LAW_ENFORCEMENT | CASE_MANAGER | CASE_ADMIN | SYSTEM_ADMIN |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `SOURCE_CREATE` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `PERSON_CREATE` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `MISSING_EVENT_CREATE`| ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_CREATE` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `FACT_CREATE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `TIP_CREATE` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `EVIDENCE_CREATE` | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `HYPOTHESIS_CREATE`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_WORKFLOW_UPDATE`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_OFFICIAL_STATUS_UPDATE`| ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_VIEW_PUBLIC` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_VIEW_RESTRICTED`| ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_VIEW_CONFIDENTIAL`| ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `CASE_VIEW_LAW_ENFORCEMENT`| ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ |
+| `CASE_ADMIN_ACCESS` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `CASE_VIEW_SEALED` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `TIMELINE_ANALYZE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `ENTITY_RESOLUTION_COMPARE` | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `AUDIT_VIEW` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| `SYSTEM_ADMINISTRATION`| ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 > [!IMPORTANT]
 > **SEPARAÇÃO ESTRITA DO SYSTEM_ADMIN:**  
